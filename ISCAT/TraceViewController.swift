@@ -3,7 +3,7 @@
 //  ISCAT
 //
 //  Created by Andrew on 30/07/2016.
-//  Copyright © 2016 Andrew. All rights reserved.
+//  Copyright © 2016 Andrew Plested. All rights reserved.
 //
 
 import UIKit
@@ -20,19 +20,17 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
 
     let v = TraceDisplay() //content view
     let ld = TraceIO()     //file retrieval
-   
-    let header = 3000                   //for axograph files
-    let tStart = 0
-    let basicChunk : CGFloat = 100     // points in a base chunk of data
+    var s = Settings()
     
     var pointIndex : Int = 0
-    var tScale = 1          //this is terrible mixing up t and x
+    //var tScale = 1          //NOT USED this is terrible mixing up t and x
     
-    var originalContentSize = CGSize()
+    
     var traceLength : Int?
     var traceArray = [Int16]() //  this array will hold the trace data
     
-    
+    let tStart = 0
+    var originalContentSize = CGSize()
     var progress = Float()
     var offset = CGPoint() //view offset
     var viewSize = CGRect()
@@ -58,8 +56,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         var firstPoint = CGPoint(x:xp, y:200)
         var drawnPoint = CGPoint(x:xp, y:200)
         
-        let chunk = Int (basicChunk / v.tDrawScale )
-        let chunkN = (traceLength! - header) / chunk         // the number of chunks to display
+        let chunk = Int (s.basicChunk / v.tDrawScale )
+        let chunkN = (traceLength! - s.header) / chunk         // the number of chunks to display
         let step = ceil(1 / Double(v.tDrawScale))
         
         print (step, chunkN, chunkN * chunk, traceLength!)
@@ -91,7 +89,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
             
             for index in stride(from:0, to: chunk, by: Int(step))  {
                 
-                pointIndex = index + header + tStart + i * chunk
+                pointIndex = index + s.header + tStart + i * chunk
                 
                 //xp is separately scaled by tDrawScale
                 drawnPoint = CGPoint(x: xp + v.tDrawScale * CGFloat(index), y: CGFloat(200) * (1.0 + CGFloat(arr[pointIndex]) / 32536.0))
@@ -123,8 +121,9 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        //get settings?
         
-
+        
         //Load the trace
         traceArray = ld.loadData()
         //print (trace[0])
@@ -207,8 +206,9 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         controller.dismiss(animated: true, completion: {})
     }
     
-    func SettingsVCDidFinish(controller: SettingsViewController) {
-        //print ("SVCDF")
+    func SettingsVCDidFinish(controller: SettingsViewController, updatedS: Settings) {
+        print ("Settings updated", updatedS)
+        s = updatedS
         controller.dismiss(animated: true, completion: {})
     }
     
@@ -217,8 +217,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         {
             if let destinationVC = segue.destination as? FittingViewController {
                 destinationVC.progressCounter = self.progress           //progress excludes the header
-                let dataLength = Float(traceLength! - header)
-                let leftPoint = header + Int(self.progress / 100 * dataLength)
+                let dataLength = Float(traceLength! - s.header)
+                let leftPoint = s.header + Int(self.progress / 100 * dataLength)
                 let rightPoint = leftPoint + Int(dataLength * Float(sv.bounds.width / sv.contentSize.width))
                 print (leftPoint, rightPoint, traceArray.count, sv.bounds.width, sv.contentSize.width) //these points are all wrong compared to whats on the screen but getting there. tooMUCH!
                 
@@ -236,7 +236,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
                 
                 //preparation for segue to settings goes here
                 //maybe need a settings object that can be passed and returned?
-                
+                destinationVC.localSettings = s
                 destinationVC.delegate = self
             }
         }

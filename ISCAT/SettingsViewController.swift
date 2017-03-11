@@ -10,33 +10,65 @@ import UIKit
 import SwiftyDropbox
 
 protocol SettingsViewControllerDelegate {
-    func SettingsVCDidFinish(controller: SettingsViewController)
+    func SettingsVCDidFinish(controller: SettingsViewController, updatedS: Settings)
     //add stuff to pass here
 }
 
-class SettingsViewController: UIViewController {
+class SettingsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
     @IBOutlet weak var BackButton: UIButton!
     @IBOutlet weak var SettingsView: UIView!
+    @IBOutlet weak var tableView: UITableView!
     
+    var localSettings : Settings?
+    var settingsList = [SettingsItem]()
     var delegate: SettingsViewControllerDelegate? = nil
+    var filenames: Array<String>?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        if let client = DropboxClientsManager.authorizedClient {
+            _ = client.files.listFolder(path: "").response { response, error in
+                if let result = response {
+                    print("Folder contents:")
+                    for entry in result.entries {
+                        print(entry.name)
+                        self.filenames?.append(entry.name)
+                        }
+                    }
+
+            }
+        }
         
+        print (localSettings!.basicChunk)
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        
+        if settingsList.count > 0 {
+            return
+        }
+        
+        let mirrorSettings = Mirror(reflecting: localSettings!)
+        for attrib in mirrorSettings.children {
+            print (attrib.label!,attrib.value)
+            switch attrib.value {
+                default:
+                    settingsList.append(SettingsItem(text: String(format:"%@ : %@", attrib.label!, String(describing: attrib.value ))))
+            }
+            
+            
+           
         // Do any additional setup after loading the view.
-    }
     
+        }
+    }
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
 
     //this code taken from the example Dropbox Swift app integration.
     @IBAction func loginDropbox(_ sender: UIButton) {
@@ -44,8 +76,28 @@ class SettingsViewController: UIViewController {
         DropboxClientsManager.authorizeFromController(UIApplication.shared, controller: self, openURL: {(url: URL) -> Void in UIApplication.shared.openURL(url)})
     }
    
+    
+    // MARK: - Table view data source
+    
+    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+        return 1
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return settingsList.count
+    }
+    
+    func tableView(_ tableView: UITableView,
+                   cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell",
+                                                 for: indexPath as IndexPath)
+        let item = settingsList[indexPath.row]
+        cell.textLabel?.text = item.text
+        return cell
+    }
+    
     @IBAction func backToMain(_ sender: Any) {
         print ("Back button")
-        delegate?.SettingsVCDidFinish(controller: self)
+        delegate?.SettingsVCDidFinish(controller: self, updatedS: localSettings!)
     }
 }

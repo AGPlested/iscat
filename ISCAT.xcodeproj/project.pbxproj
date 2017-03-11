@@ -21,6 +21,8 @@
 		4947561E1D4D59FD00C485DB /* sim1600.bin in Resources */ = {isa = PBXBuildFile; fileRef = 4947561D1D4D59FD00C485DB /* sim1600.bin */; };
 		49529B1B1DBA2BA2006CF048 /* TraceDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49529B1A1DBA2BA2006CF048 /* TraceDisplay.swift */; };
 		4964D7E91E7198F500078EF9 /* FittingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4964D7E81E7198F500078EF9 /* FittingViewController.swift */; };
+		498E2F321E729E2E00BBB0D8 /* settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498E2F311E729E2E00BBB0D8 /* settings.swift */; };
+		498E2F341E72A1AA00BBB0D8 /* SettingsItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498E2F331E72A1AA00BBB0D8 /* SettingsItem.swift */; };
 		49C8B5431E69A02D005455CB /* Gaussian.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49C8B5421E69A02D005455CB /* Gaussian.swift */; };
 /* End PBXBuildFile section */
 
@@ -53,6 +55,8 @@
 		4947561D1D4D59FD00C485DB /* sim1600.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = sim1600.bin; sourceTree = "<group>"; };
 		49529B1A1DBA2BA2006CF048 /* TraceDisplay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TraceDisplay.swift; sourceTree = "<group>"; };
 		4964D7E81E7198F500078EF9 /* FittingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FittingViewController.swift; sourceTree = "<group>"; };
+		498E2F311E729E2E00BBB0D8 /* settings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = settings.swift; sourceTree = "<group>"; };
+		498E2F331E72A1AA00BBB0D8 /* SettingsItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsItem.swift; sourceTree = "<group>"; };
 		49C8B5421E69A02D005455CB /* Gaussian.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Gaussian.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -107,9 +111,11 @@
 				49C8B5421E69A02D005455CB /* Gaussian.swift */,
 				491A7D001D4D06510017D238 /* TraceIO.swift */,
 				49529B1A1DBA2BA2006CF048 /* TraceDisplay.swift */,
+				498E2F311E729E2E00BBB0D8 /* settings.swift */,
 				491E127C1E6DA289004A1EE2 /* Event.swift */,
 				491A7CE01D4CE2030017D238 /* TraceViewController.swift */,
 				490353011E71AF9C00C7333D /* SettingsViewController.swift */,
+				498E2F331E72A1AA00BBB0D8 /* SettingsItem.swift */,
 				4964D7E81E7198F500078EF9 /* FittingViewController.swift */,
 			);
 			path = ISCAT;
@@ -262,9 +268,11 @@
 				49529B1B1DBA2BA2006CF048 /* TraceDisplay.swift in Sources */,
 				491A7CE11D4CE2030017D238 /* TraceViewController.swift in Sources */,
 				491A7CDF1D4CE2030017D238 /* AppDelegate.swift in Sources */,
+				498E2F321E729E2E00BBB0D8 /* settings.swift in Sources */,
 				491E127D1E6DA289004A1EE2 /* Event.swift in Sources */,
 				491A7D011D4D06510017D238 /* TraceIO.swift in Sources */,
 				490353021E71AF9C00C7333D /* SettingsViewController.swift in Sources */,
+				498E2F341E72A1AA00BBB0D8 /* SettingsItem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
