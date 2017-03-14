@@ -10,7 +10,7 @@ import UIKit
 import SwiftyDropbox
 
 protocol SettingsViewControllerDelegate {
-    func SettingsVCDidFinish(controller: SettingsViewController, updatedS: Settings)
+    func SettingsVCDidFinish(controller: SettingsViewController, updatedS: SettingsList)
     //add stuff to pass here
 }
 
@@ -20,7 +20,7 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
     @IBOutlet weak var SettingsView: UIView!
     @IBOutlet weak var tableView: UITableView!
     
-    var localSettings : Settings?
+    var localSettings : SettingsList?
     var settingsList = [SettingsItem]()
     var delegate: SettingsViewControllerDelegate? = nil
     var filenames: Array<String>?
@@ -55,7 +55,8 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
             print (attrib.label!,attrib.value)
             switch attrib.value {
                 default:
-                    settingsList.append(SettingsItem(text: String(format:"%@ : %@", attrib.label!, String(describing: attrib.value ))))
+                    print ("crap")
+                    //settingsList.append(SettingsItem(text: String(format:"%@ : %@", attrib.label!, String(describing: attrib.value ))))
             }
             
             
@@ -92,7 +93,7 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell",
                                                  for: indexPath as IndexPath)
         let item = settingsList[indexPath.row]
-        cell.textLabel?.text = item.text
+        //cell.textLabel?.textLabel = item.text
         return cell
     }
     
