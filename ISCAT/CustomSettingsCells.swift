@@ -10,6 +10,8 @@ import UIKit
 
 class CustomSettingCell: UITableViewCell {
     //@IBOutlet weak var myView: UIView!
+
+    @IBOutlet weak var view: UIView!
     @IBOutlet weak var SettingLabel: UILabel!
     @IBOutlet weak var SettingValue: UILabel!
 }

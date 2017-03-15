@@ -16,24 +16,29 @@ protocol SettingsViewControllerDelegate {
 
 class SettingsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
+    
+    
+    @IBOutlet weak var settingsView: UIView!
     @IBOutlet weak var BackButton: UIButton!
-    @IBOutlet weak var SettingsView: UIView!
+
     @IBOutlet weak var tableView: UITableView!
     
-    let cellReuseIdentifier = "cell"
+    let cellReuseIdentifier = "customCell1"
     
     var localSettings : SettingsList?
     var settingsTableRows = [SettingsItem]()
     var delegate: SettingsViewControllerDelegate? = nil
     var filenames: Array<String>?
-    
+  
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        
+        // must *NOT* register the custom cell here if using interface builder!!!!!!
+        //tableView.register(CustomSettingCell.self, forCellReuseIdentifier: cellReuseIdentifier)
         
         if let client = DropboxClientsManager.authorizedClient {
             _ = client.files.listFolder(path: "").response { response, error in
@@ -86,23 +91,23 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell:CustomSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseIdentifier, for: indexPath as IndexPath) as! CustomSettingCell
+        let cCell: CustomSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseIdentifier, for: indexPath) as! CustomSettingCell
         let item = settingsTableRows[indexPath.row]
-        cell.SettingLabel.text =  "\(item.textLabel)"
+        cCell.SettingLabel.text =  item.textLabel
         
         // handle the different types of setting value case-by-case
         switch item.sVal {
             case .integer:
-                cell.SettingValue.text = "\(item.getIntValue())"
+                cCell.SettingValue.text = "\(item.getIntValue())"
             case .textParameter(let pVal):
-                cell.SettingValue.text =  pVal
+                cCell.SettingValue.text =  pVal
             case .float:
-                cell.SettingValue.text =  "\(item.getFloatValue())"
+                cCell.SettingValue.text! =  "\(item.getFloatValue())"
             default :
-                cell.SettingValue.text =  "undefined value"
+                cCell.SettingValue.text! =  "undefined value"
         }
 
-        return cell
+        return cCell
     }
     
     @IBAction func backToMain(_ sender: Any) {
