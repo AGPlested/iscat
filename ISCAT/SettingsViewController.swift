@@ -20,6 +20,8 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
     @IBOutlet weak var SettingsView: UIView!
     @IBOutlet weak var tableView: UITableView!
     
+    let cellReuseIdentifier = "cell"
+    
     var localSettings : SettingsList?
     var settingsTableRows = [SettingsItem]()
     var delegate: SettingsViewControllerDelegate? = nil
@@ -84,24 +86,22 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath as IndexPath)
+        let cell:CustomSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseIdentifier, for: indexPath as IndexPath) as! CustomSettingCell
         let item = settingsTableRows[indexPath.row]
-        var rowView = "\(item.textLabel) :"
+        cell.SettingLabel.text =  "\(item.textLabel)"
         
         // handle the different types of setting value case-by-case
         switch item.sVal {
             case .integer:
-                rowView += "\(item.getIntValue())"
+                cell.SettingValue.text = "\(item.getIntValue())"
             case .textParameter(let pVal):
-                rowView += pVal
+                cell.SettingValue.text =  pVal
             case .float:
-                rowView += "\(item.getFloatValue())"
+                cell.SettingValue.text =  "\(item.getFloatValue())"
             default :
-                rowView += "undefined value"
+                cell.SettingValue.text =  "undefined value"
         }
 
-        cell.textLabel?.text = rowView //extra optionality here on "text" screwed it up
-        print (rowView)
         return cell
     }
     
