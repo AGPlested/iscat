@@ -135,6 +135,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         //print (trace[0])
         traceView(arr: traceArray)
         sv.bouncesZoom = false
+        statusLabel.text = "No fit yet."
         updateLabels()
         
         // Do any additional setup after loading the view, typically from a nib.
@@ -208,7 +209,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
     func FitVCDidFinish(controller: FittingViewController, touches: Int, fit:eventList) {
         print ("Touches", touches)
         print ("Fit", fit)
-        statusLabel.text = String(format:"last fit: %@",fit.consolePrintable())
+        statusLabel.text = String(format:"Last fit: %@",fit.consolePrintable())
         controller.dismiss(animated: true, completion: {})
     }
     
@@ -241,7 +242,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
             if let destinationVC = segue.destination as? SettingsViewController {
                 
                 //preparation for segue to settings goes here
-                //maybe need a settings object that can be passed and returned?
+                //local settings object is passed and returned
                 destinationVC.localSettings = s
                 destinationVC.delegate = self
             }
