@@ -16,6 +16,7 @@
 		491A7CF41D4CE2040017D238 /* ISCATTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491A7CF31D4CE2040017D238 /* ISCATTests.swift */; };
 		491A7D011D4D06510017D238 /* TraceIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491A7D001D4D06510017D238 /* TraceIO.swift */; };
 		491E127D1E6DA289004A1EE2 /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491E127C1E6DA289004A1EE2 /* Event.swift */; };
+		492304F71E796E4800C2A439 /* CustomSettingsCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = 492304F61E796E4800C2A439 /* CustomSettingsCells.swift */; };
 		493DDD811E71968500F5E12F /* SwiftyDropbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 493DDD801E71968500F5E12F /* SwiftyDropbox.framework */; };
 		493DDD831E71968B00F5E12F /* Alamofire.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 493DDD821E71968B00F5E12F /* Alamofire.framework */; };
 		4947561E1D4D59FD00C485DB /* sim1600.bin in Resources */ = {isa = PBXBuildFile; fileRef = 4947561D1D4D59FD00C485DB /* sim1600.bin */; };
@@ -49,6 +50,7 @@
 		491A7CF51D4CE2040017D238 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		491A7D001D4D06510017D238 /* TraceIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TraceIO.swift; sourceTree = "<group>"; };
 		491E127C1E6DA289004A1EE2 /* Event.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
+		492304F61E796E4800C2A439 /* CustomSettingsCells.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomSettingsCells.swift; sourceTree = "<group>"; };
 		493DDD801E71968500F5E12F /* SwiftyDropbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyDropbox.framework; path = Carthage/Build/iOS/SwiftyDropbox.framework; sourceTree = "<group>"; };
 		493DDD821E71968B00F5E12F /* Alamofire.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Alamofire.framework; path = Carthage/Build/iOS/Alamofire.framework; sourceTree = "<group>"; };
 		4947561D1D4D59FD00C485DB /* sim1600.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = sim1600.bin; sourceTree = "<group>"; };
@@ -106,6 +108,7 @@
 				491A7CEA1D4CE2030017D238 /* Info.plist */,
 				491A7CE71D4CE2030017D238 /* LaunchScreen.storyboard */,
 				491A7CE21D4CE2030017D238 /* Main.storyboard */,
+				492304F61E796E4800C2A439 /* CustomSettingsCells.swift */,
 				49C8B5421E69A02D005455CB /* Gaussian.swift */,
 				491A7D001D4D06510017D238 /* TraceIO.swift */,
 				49529B1A1DBA2BA2006CF048 /* TraceDisplay.swift */,
@@ -265,6 +268,7 @@
 				49529B1B1DBA2BA2006CF048 /* TraceDisplay.swift in Sources */,
 				491A7CE11D4CE2030017D238 /* TraceViewController.swift in Sources */,
 				491A7CDF1D4CE2030017D238 /* AppDelegate.swift in Sources */,
+				492304F71E796E4800C2A439 /* CustomSettingsCells.swift in Sources */,
 				498E2F321E729E2E00BBB0D8 /* settings.swift in Sources */,
 				491E127D1E6DA289004A1EE2 /* Event.swift in Sources */,
 				491A7D011D4D06510017D238 /* TraceIO.swift in Sources */,
