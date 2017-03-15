@@ -21,17 +21,22 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
     @IBOutlet weak var tableView: UITableView!
     
     var localSettings : SettingsList?
-    var settingsList = [SettingsItem]()
+    var settingsTableRows = [SettingsItem]()
     var delegate: SettingsViewControllerDelegate? = nil
     var filenames: Array<String>?
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        // Do any additional setup after loading the view.
+        
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
         
         if let client = DropboxClientsManager.authorizedClient {
             _ = client.files.listFolder(path: "").response { response, error in
                 if let result = response {
-                    print("Folder contents:")
+                    print("Dropbox folder contents:")
                     for entry in result.entries {
                         print(entry.name)
                         self.filenames?.append(entry.name)
@@ -41,36 +46,26 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
             }
         }
         
-        print (localSettings!.basicChunk)
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        //print (localSettings!.basicChunk.textLabel)
         
-        if settingsList.count > 0 {
+        if settingsTableRows.count > 0 {
             return
         }
-        
-        let mirrorSettings = Mirror(reflecting: localSettings!)
-        for attrib in mirrorSettings.children {
-            print (attrib.label!,attrib.value)
-            switch attrib.value {
-                default:
-                    print ("crap")
-                    //settingsList.append(SettingsItem(text: String(format:"%@ : %@", attrib.label!, String(describing: attrib.value ))))
-            }
+        //expose all settings
+        print ("Unpacking contents of settingsList to table rows")
+        let localMirror = Mirror(reflecting:localSettings!)
+        for (sName, sValue) in localMirror.children {
+            settingsTableRows.append(sValue as! SettingsItem)
+            print (sName!, sValue)
             
-            
-           
-        // Do any additional setup after loading the view.
-    
         }
     }
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
     }
     
-
     //this code taken from the example Dropbox Swift app integration.
     @IBAction func loginDropbox(_ sender: UIButton) {
         
@@ -85,15 +80,28 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return settingsList.count
+        return settingsTableRows.count
     }
     
-    func tableView(_ tableView: UITableView,
-                   cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell",
-                                                 for: indexPath as IndexPath)
-        let item = settingsList[indexPath.row]
-        //cell.textLabel?.textLabel = item.text
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath as IndexPath)
+        let item = settingsTableRows[indexPath.row]
+        var rowView = "\(item.textLabel) :"
+        
+        // handle the different types of setting value case-by-case
+        switch item.sVal {
+            case .integer:
+                rowView += "\(item.getIntValue())"
+            case .textParameter(let pVal):
+                rowView += pVal
+            case .float:
+                rowView += "\(item.getFloatValue())"
+            default :
+                rowView += "undefined value"
+        }
+
+        cell.textLabel?.text = rowView //extra optionality here on "text" screwed it up
+        print (rowView)
         return cell
     }
     

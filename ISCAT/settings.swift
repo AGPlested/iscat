@@ -18,7 +18,8 @@ enum settingValue {
 }
 
 //settings for the app as a whole at the moment
-class SettingsList {
+class SettingsList  {
+    
     
     //header at the start of Axograph binary (raw) data file is 3000 16-bits
     var header = SettingsItem(text: "Header", sValue: .integer(3000))
@@ -47,7 +48,7 @@ class SettingsItem: NSObject {
     // A Boolean value that determines the whether this control is active
     var active: Bool
     
-    //provides information about how to display and edit the setting
+    //provides information about how to display and edit the setting, and its value
     var sVal : settingValue
     
     // Returns a Settings Item initialized with the given text, kind and default 'active' and default value.
@@ -58,18 +59,18 @@ class SettingsItem: NSObject {
         active = true
         
         switch sValue {
-        case .float:
-            self.sVal = settingValue.float(0.0)
-        case .integer:
-            self.sVal = settingValue.integer(0)
-        case .textParameter:
-            self.sVal = settingValue.textParameter("Not defined yet.")
-        case .toggle:
-            self.sVal = settingValue.toggle(false)
+        case let .float(val):
+            self.sVal = settingValue.float(val)
+        case let .integer(val):
+            self.sVal = settingValue.integer(val)
+        case let .textParameter(val):
+            self.sVal = settingValue.textParameter(val)
+        case let .toggle(val):
+            self.sVal = settingValue.toggle(val)
         /*case .group:
             self.sVal = settingValue.group() */
         default:
-            self.sVal = settingValue.textParameter("")
+            self.sVal = settingValue.textParameter("Not defined yet.")
         }
     }
 
@@ -89,4 +90,27 @@ class SettingsItem: NSObject {
         }
         return true
     }
+    
+    func getIntValue () -> (Int) {
+        switch sVal {
+            case .integer(let integerValue) :
+                return integerValue
+            default:
+                return 0
+            }
+    }
+    
+    func getFloatValue () -> (Double) {
+        switch sVal {
+            case .float(let floatValue) :
+                return floatValue
+            default:
+                return 0
+            }
+        
+    }
+    
+    
+    
+    
 }

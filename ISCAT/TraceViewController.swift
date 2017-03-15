@@ -30,11 +30,13 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
     var traceArray = [Int16]() //  this array will hold the trace data
     
     let tStart = 0
+    var xp : CGFloat = 0    //the xposn of the trace
+    
     var originalContentSize = CGSize()
     var progress = Float()
     var offset = CGPoint() //view offset
     var viewSize = CGRect()
-    var xp : CGFloat = 0    //the xposn of the trace
+    
     var originalZoom = CGFloat(1)
     
     
@@ -52,16 +54,16 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
     func traceView(arr: [Int16]) {
         traceLength = arr.count
         
-        
         var firstPoint = CGPoint(x:xp, y:200)
         var drawnPoint = CGPoint(x:xp, y:200)
         
-        let bChunk = s.basicChunk.sVal.integer
+        let bChunk = s.basicChunk.getIntValue()
         
-        let headerSize = s.header.sVal
+        let headerSize = s.header.getIntValue()
         
-        let chunk = Int (bChunk / v.tDrawScale )
-        let chunkN = (traceLength! - headerSize) / bChunk         // the number of chunks to display
+        let chunk = Int (Float(bChunk) / Float(v.tDrawScale ))
+        let chunkN = Int ((traceLength! - headerSize) / chunk )        // the number of chunks to display
+        
         let step = ceil(1 / Double(v.tDrawScale))
         
         print (step, chunkN, chunkN * chunk, traceLength!)
@@ -93,7 +95,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
             
             for index in stride(from:0, to: chunk, by: Int(step))  {
                 
-                pointIndex = index + 3000 + tStart + i * chunk
+                pointIndex = index + headerSize + tStart + i * chunk
                 
                 //xp is separately scaled by tDrawScale
                 drawnPoint = CGPoint(x: xp + v.tDrawScale * CGFloat(index), y: CGFloat(200) * (1.0 + CGFloat(arr[pointIndex]) / 32536.0))
@@ -222,7 +224,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
             if let destinationVC = segue.destination as? FittingViewController {
                 destinationVC.progressCounter = self.progress           //progress excludes the header
                 let dataLength = Float(traceLength! - 3000)
-                let leftPoint = s.header.sVal + Int(self.progress / 100 * dataLength)
+                let leftPoint = s.header.getIntValue() + Int(self.progress / 100 * dataLength)
                 let rightPoint = leftPoint + Int(dataLength * Float(sv.bounds.width / sv.contentSize.width))
                 print (leftPoint, rightPoint, traceArray.count, sv.bounds.width, sv.contentSize.width) //these points are all wrong compared to whats on the screen but getting there. tooMUCH!
                 
