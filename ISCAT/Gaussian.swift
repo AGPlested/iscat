@@ -8,13 +8,7 @@
 
 import Foundation
 import UIKit
-
-
 import Accelerate
-
-
-
-
 
 class GaussianFit {
 
@@ -22,11 +16,9 @@ class GaussianFit {
     var kernel = [Float]()                  //the filter kernel
     
     init() {
-        //(xf, gaussArray) = createGaussianArray()
         kernel = dcGaussian(fc: 0.1)
     }
 
-    
     func conv(x: [Float], k: [Float]) -> [Float] {
         let resultSize = x.count + k.count - 1
         var result = [Float](repeating: 0, count: resultSize)
