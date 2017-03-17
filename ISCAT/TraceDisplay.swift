@@ -10,7 +10,7 @@ import UIKit
 
 class TraceDisplay: UIView {
     
-    var tDrawScale : CGFloat = 0.1 {
+    var tDrawScale : CGFloat = 0.5 {
         didSet {
             setNeedsDisplay()
             print("set")

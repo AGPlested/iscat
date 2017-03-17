@@ -156,19 +156,16 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         //print ("scrolled", sv.contentOffset)
         updateLabels()
         sv.isUserInteractionEnabled = true
-        
     }
     
     func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
-    
-        
+
         var sz = sv.bounds.size
         sz.width = xp * scale
         sz.height *= scale //reset size of view
         sv.contentSize = sz
         
         updateLabels()
-        
         
         print ("content size after resize", sv.contentSize.width, "offset after resize" , sv.contentOffset.x)
         sv.isUserInteractionEnabled = true
@@ -197,8 +194,6 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         //to get the progress meter correct, the
         //original content size must be scaled by the zoom factor during the zoom
         progress = 100 * Float(sv.contentOffset.x) / Float(self.originalContentSize.width * zoomFactor)
-        
-        
         updateLabels()
         
     }
@@ -224,10 +219,10 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         {
             if let destinationVC = segue.destination as? FittingViewController {
                 destinationVC.progressCounter = self.progress           //progress excludes the header
-                let dataLength = Float(traceLength! - 3000)
+                let dataLength = Float(traceLength! - 3000)             // this is not scaled
                 let leftPoint = s.header.getIntValue() + Int(self.progress / 100 * dataLength)
                 let rightPoint = leftPoint + Int(dataLength * Float(sv.bounds.width / sv.contentSize.width))
-                print (leftPoint, rightPoint, traceArray.count, sv.bounds.width, sv.contentSize.width) //these points are all wrong compared to whats on the screen but getting there. tooMUCH!
+                print (leftPoint, rightPoint, rightPoint-leftPoint, traceArray.count, sv.bounds.width, sv.contentSize.width) //these points are all wrong compared to whats on the screen but getting there. tooMUCH!
                 
                 //let pointRange = (leftPoint, rightPoint)
                 let fitSlice = Array(self.traceArray[leftPoint..<rightPoint]) //still seems like it takes too much but why???

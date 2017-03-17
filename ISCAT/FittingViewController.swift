@@ -33,11 +33,12 @@ class FittingViewController: UIViewController {
     // store fit command to reproduce
     //
     
-    //seems crazy to have these outside of gesture recognition but we need to remember BeganTap
+    //need to remember BeganTap
     var locationOfBeganTap: CGPoint?
     var currentLocationOfTap: CGPoint?
     var locationOfEndTap: CGPoint?
     var averageY: CGFloat = 0.0          //want to store this for each event later
+    var screenPointsPerDataPoint : Float?
     
     @IBOutlet weak var console: UITableView!
     @IBOutlet weak var FitView: UIView!
@@ -61,7 +62,10 @@ class FittingViewController: UIViewController {
         let thickness: CGFloat = 2.0
         let tracePath = UIBezierPath()
         tracePath.move(to: firstPoint)
-        print ("traceview", pointsToFit.count)
+        
+        screenPointsPerDataPoint = 900.0 / Float(pointsToFit.count)
+        
+        print ("traceview", pointsToFit.count, screenPointsPerDataPoint)
         for (index,point) in pointsToFit.enumerated() {
         
             drawnPoint = CGPoint(x: viewWidth * CGFloat(index) / CGFloat(pointsToFit.count) , y: yPlotOffset + traceHeight * CGFloat(point) / 32536.0)
@@ -142,18 +146,16 @@ class FittingViewController: UIViewController {
             
             print ("began two finger pan", locationOfBeganTap!)
             //console.dataSource()
-            gaussianPath = gfit.buildGaussPath(firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
+            gaussianPath = gfit.buildGaussPath(pointsPSP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
             gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
             FitView.layer.addSublayer(gaussianLayer)
             
         } else if gesture.state == UIGestureRecognizerState.changed {
             currentLocationOfTap = gesture.location(in: self.view)
-            
-            
-           
+        
             CATransaction.begin()
             CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
-            gaussianLayer.path = gfit.buildGaussPath(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, window: fitWindow)
+            gaussianLayer.path = gfit.buildGaussPath(pointsPSP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, window: fitWindow)
             CATransaction.commit()
             //FitView.layer.addSublayer(gaussianLayer)
             
