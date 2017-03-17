@@ -17,46 +17,65 @@ class FittingViewController: UIViewController {
     var progressCounter : Float = 0
     var pointsToFit : [Int16] = []
     var delegate: FitViewControllerDelegate? = nil
-    var panCount : Int = 0
-    var swipeCount : Int = 0
+    var panCount : Int = 0          //not used
+    var swipeCount : Int = 0        //never used
     var fitLine: CAShapeLayer!
     var gaussianLayer: CAShapeLayer!
     var gaussianPath: CGPath!
-    let gfit = GaussianFit(filter: 0.05)            //fc as a function of sample frequency - should be a setting
-    var fitData = eventList() //from Event.swift
-    let fitWindow = CGPoint (x: 900, y: 400)
-    var worstSSD : Float = 1e5
     
-    let yPlotOffset = CGFloat(200)
-    let traceHeight = CGFloat(400)
+    let gfit = GaussianFit(filter: 0.05)     //default fc as a function of sample frequency - should be a setting
+    
+    var fitData = eventList()               //from Event.swift
+    
+    var worstSSD : Float = 1e5              //per point
+    
+    
     //assuming a window of around 1000*500
     //would be nice just to take the coordinates from the previous layout but couldn't work out how to do it.
-    
+    let yPlotOffset = CGFloat(200)
+    let traceHeight = CGFloat(400)
+    let fitWindow = CGPoint (x: 900, y: 400)
     let viewWidth = CGFloat(900)
+    var screenPointsPerDataPoint : Float?
     
     // need a container to hold all data from fitData DONE
     // input to fit algorithm
+    // run fitting command
     // store fit command to reproduce
-    //
+    // need to be selectable to move
+    // live RMSD? DONE
+    // snap?
+    // draw grid?
+    // live amplitude histogram, markable
     
     //need to remember BeganTap
     var locationOfBeganTap: CGPoint?
     var currentLocationOfTap: CGPoint?
     var locationOfEndTap: CGPoint?
-    var averageY: CGFloat = 0.0          //want to store this for some events later (Could calculate at the time?)
-    var screenPointsPerDataPoint : Float?
     
-    @IBOutlet weak var console: UITableView!
+    //transformed points (as drawn) to be used for calcs
+    var firstTapAsDrawn: CGPoint?
+    var currentTapAsDrawn: CGPoint?
+    var finalTapAsDrawn: CGPoint?
+    
+    var averageY: CGFloat = 0.0
+    //want to store this for some events later (Could calculate at the time?)
+    
+    
+    @IBOutlet weak var console: UITableView!        //console is not used yet
     @IBOutlet weak var FitView: UIView!
     @IBOutlet weak var positionLabel: UILabel!
     @IBOutlet weak var BackButton: UIButton!
     
-    func fitTraceView(arr: [Int16]) {
+    
+    func fitTraceView() {
         //draw a fixed data trace on the screen
         
-      
-        let firstPoint = CGPoint(x:0, y:yPlotOffset)
-        var drawnPoint = CGPoint(x:0, y:yPlotOffset)
+        screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)    //900
+        print ("traceview", pointsToFit.count, screenPointsPerDataPoint!)
+        
+        let firstDataPoint = CGPoint(x:0, y:yPlotOffset)
+        var drawnDataPoint = CGPoint(x:0, y:yPlotOffset)
         
         FitView.backgroundColor = UIColor.white
         FitView.translatesAutoresizingMaskIntoConstraints = false
@@ -64,16 +83,14 @@ class FittingViewController: UIViewController {
         //drawing trace
         let thickness: CGFloat = 2.0
         let tracePath = UIBezierPath()
-        tracePath.move(to: firstPoint)
+        tracePath.move(to: firstDataPoint)
         
-        screenPointsPerDataPoint = 900.0 / Float(pointsToFit.count)             //900 is window size, should be a parameter
         
-        print ("traceview", pointsToFit.count, screenPointsPerDataPoint)
+        
         for (index,point) in pointsToFit.enumerated() {
         
-            drawnPoint = CGPoint(x: viewWidth * CGFloat(index) / CGFloat(pointsToFit.count) , y: yPlotOffset + traceHeight * CGFloat(point) / 32536.0)
-            tracePath.addLine(to: drawnPoint)
-            
+            drawnDataPoint = CGPoint(x: viewWidth * CGFloat(index) / CGFloat(pointsToFit.count) , y: yPlotOffset + traceHeight * CGFloat(point) / 32536.0)
+            tracePath.addLine(to: drawnDataPoint)
         }
         
         // render to layer
@@ -83,7 +100,6 @@ class FittingViewController: UIViewController {
         traceLayer.fillColor = nil
         traceLayer.lineWidth = thickness
         FitView.layer.addSublayer(traceLayer)
-    
     }
     
     func optimiseFit() -> [Int]{
@@ -96,7 +112,7 @@ class FittingViewController: UIViewController {
         
         print ("drawing line:", startTap!, endTap!)
         //rough conversion of y value
-        let averageY = (startTap.y + endTap.y) / 2 - 50
+        averageY = (startTap.y + endTap.y) / 2 - 50
         
         let startPoint = CGPoint(x: (startTap.x - 50), y: averageY)     //-50 here for feel
         let endPoint = CGPoint(x: (endTap.x - 50), y: averageY)         //as above
@@ -108,8 +124,6 @@ class FittingViewController: UIViewController {
         fitLayer.strokeColor = UIColor.red.cgColor
         fitLayer.fillColor = nil
         fitLayer.lineWidth = thickness
-        
-        
         return fitLayer
     }
   
@@ -131,7 +145,6 @@ class FittingViewController: UIViewController {
         let rightIndex   = Int(Float(pointsToFit.count) * rightTapIndex / vw)
         //need to check for edge here.
         
-        
         let fittingSlice = Array(pointsToFit[leftIndex..<rightIndex])
         
         return fittingSlice
@@ -149,7 +162,7 @@ class FittingViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        fitTraceView(arr: pointsToFit)
+        fitTraceView()
         positionLabel.text = "Position in trace \(progressCounter) %"
         
         // Do any additional setup after loading the view.
@@ -188,7 +201,14 @@ class FittingViewController: UIViewController {
             let screenTopHat = lastDrawnFilteredTopHat.map {th in Float(locationOfBeganTap!.y) - th}
             
             let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen points
-            print (screenTopHat, target)
+            print (screenTopHat.count, target.count)
+            
+            
+            // these ^^^ don't match!!! target is usually longer by about 20!
+            // NEED TO WRITE OUT ALL POINTS TO SEE WHAT IS GOING ON
+            
+            
+            
             let SSD_size = Float(target.count)
             let normalisedSSD = calculateSSD (A: screenTopHat, B: target) / SSD_size
             //bad fit is red, good fit is green
@@ -208,7 +228,7 @@ class FittingViewController: UIViewController {
             print ("end two finger pan", locationOfEndTap!)
             
             //provide a choice here to get rid of the fit.
-            //but what gesture.
+            //but what gesture?
             
             //need to think about resolving/overwriting?
             
@@ -233,17 +253,13 @@ class FittingViewController: UIViewController {
             panCount += 1
             print (fitEventToStore!.printable())
             fitData.eventAppend(e: fitEventToStore!)
-
             
-            
-    }
+        }
     }
    
     @IBAction func fitPan(_ gesture: UIPanGestureRecognizer) {
         
         // recognize pan and get coords
-        
-        
         if gesture.state == UIGestureRecognizerState.began {
             
             locationOfBeganTap = gesture.location(in: self.view)
@@ -272,7 +288,6 @@ class FittingViewController: UIViewController {
             CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
             fitLine.path = pathOfFitLine(startPt: startPoint, endPt: endPoint)
             CATransaction.commit()
-            
         }
         
         else if gesture.state == UIGestureRecognizerState.ended {
@@ -298,11 +313,10 @@ class FittingViewController: UIViewController {
                 
             }
             
-            
-            //saveFitLine
+            //saveFitLine?
             
         }
-
+    }
         
         //an action for a more interactive kind of fit
         //dragging out a gaussian filtered rectangle?
@@ -354,43 +368,15 @@ class FittingViewController: UIViewController {
         //     rightExtent.x = currentPoint.x
         //}
     
-        
-        
-        
-        
-        //need to be selectable to move
-        
-        //live RMSD?
-        
-        //snap? 
-        
-        //draw grid?
-        
-        //draw amplitude lines
-        
-        //
-        
     
-        
-        
-        
-        
-        
-        
-    
-        
-    }
-    
-    
-    
-    // run fitting command
+
 
     @IBAction func goBack(_ sender: Any) {
         print ("button")
+        //pan count is not used any more.
         delegate?.FitVCDidFinish(controller: self, touches: panCount, fit: fitData)
         
     }
-  
 
     /*
     // MARK: - Navigation
