@@ -28,6 +28,7 @@ class GaussianFit {
         vDSP_conv(xPadded, 1, kEnd, -1, &result, 1, vDSP_Length(resultSize), vDSP_Length(k.count))
         
         // result is bigger than input and I would prefer to slice out the input part...
+        // not sure that it's any problem
         return result
     }
     
@@ -54,17 +55,7 @@ class GaussianFit {
         return rawKernel.map { kRaw in kRaw / sum }  //normalised coefficients to sum to one
     }
 
-    /*
-    func createGaussianArray (mu: Float = 0.5) -> ([Float], [Float]) {
-        //makes two arrays: x points and Gaussian function
-        
-        xf = x.map {x in Float(x) / 100}
-        gaussArray = xf.map { xf in gaussian (x: xf, a: 1,b: mu,c: 10) }
-
-        return (xf, gaussArray)
-    }
-    */
-    
+   
     /*
     typical values, now received from view controller
     and gesture:
@@ -120,3 +111,14 @@ class GaussianFit {
     }
 }
 //cv.layer.addSublayer(gLayer)  is what is done with that...
+
+/*
+ func createGaussianArray (mu: Float = 0.5) -> ([Float], [Float]) {
+ //makes two arrays: x points and Gaussian function
+ //arbitrary choice of width.
+ xf = x.map {x in Float(x) / 100}
+ gaussArray = xf.map { xf in gaussian (x: xf, a: 1,b: mu,c: 10) }
+ 
+ return (xf, gaussArray)
+ }
+ */
