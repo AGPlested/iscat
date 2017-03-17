@@ -15,8 +15,9 @@ class GaussianFit {
     var filteredTopHat = [Float]()
     var kernel = [Float]()                  //the filter kernel
     
-    init() {
-        kernel = dcGaussian(fc: 0.1)
+    init(filter: Float) {
+        //filter is the filter corner frequency expressed as a fraction of the sample frequency (see Blue Book).
+        kernel = dcGaussian(fc: filter)
     }
 
     func conv(x: [Float], k: [Float]) -> [Float] {
@@ -44,7 +45,7 @@ class GaussianFit {
     }
     
     func dcGaussian (fc: Float) -> [Float] {
-        //normalised digital Gaussian filter  - less than 0.5% error against Bessel
+        //normalised digital Gaussian filter kernel - less than 0.5% error against Bessel
         
         let sigma = 0.132505 / fc           //equation A11 Chapter 19 Blue Book (Neher and Sakmann).
         let width = 2 * Int (4 * sigma)  //2 * nc, Swift rounds down
@@ -76,7 +77,7 @@ class GaussianFit {
         let iWidth = Int(gWidth)
         
         let topHatInput = topHat(width: iWidth, height: amp)
-        let filteredTopHat = conv(x: topHatInput, k: kernel)
+        filteredTopHat = conv(x: topHatInput, k: kernel)
         let xc = filteredTopHat.count
         let xf = Array(0...xc)
         //let cv = UIView(frame: CGRect(x: 0.0, y: 0.0, width: window.x, height: window.y))
@@ -103,12 +104,22 @@ class GaussianFit {
         
         let gLayer = CAShapeLayer()
         gLayer.path = gPath
-        gLayer.strokeColor = UIColor.green.cgColor
+        gLayer.strokeColor = UIColor.red.cgColor //color based on LSQ?
         gLayer.fillColor = nil
-        gLayer.lineWidth =  3
+        gLayer.lineWidth =  5
 
         return gLayer
     }
+}
+
+func fitColor(worstSSD: Float, currentSSD: Float) -> UIColor {
+    var current = currentSSD
+    if current == 0 {current = 1.0}
+    if current > worstSSD {current = worstSSD}
+    var val = CGFloat( ( 3.0 * ( ( log(currentSSD) - log(worstSSD) ) / log(worstSSD) ) ) + 1.0)
+    if val > 1.0 {val = 1.0}
+    if val < 0.0 {val = 0.0}    //supersafe
+    return UIColor(red: val, green: 1.0 - val, blue: 0.0, alpha: 1.0)
 }
 //cv.layer.addSublayer(gLayer)  is what is done with that...
 
