@@ -29,12 +29,10 @@ class FittingViewController: UIViewController {
     
     var worstSSD : Float = 1e5              //per point
     
-    
-    //assuming a window of around 1000*500
     //would be nice just to take the coordinates from the previous layout but couldn't work out how to do it.
     let yPlotOffset = CGFloat(200)
     let traceHeight = CGFloat(400)
-    let fitWindow = CGPoint (x: 900, y: 400)
+    let fitWindow = CGPoint (x: 900, y: 600)
     let viewWidth = CGFloat(900)
     var screenPointsPerDataPoint : Float?
     
@@ -85,10 +83,7 @@ class FittingViewController: UIViewController {
         let tracePath = UIBezierPath()
         tracePath.move(to: firstDataPoint)
         
-        
-        
-        for (index,point) in pointsToFit.enumerated() {
-        
+        for (index, point) in pointsToFit.enumerated() {
             drawnDataPoint = CGPoint(x: viewWidth * CGFloat(index) / CGFloat(pointsToFit.count) , y: yPlotOffset + traceHeight * CGFloat(point) / 32536.0)
             tracePath.addLine(to: drawnDataPoint)
         }
@@ -139,14 +134,17 @@ class FittingViewController: UIViewController {
         let leftTapIndex = min (Float(firstTouch.x), Float(currentTouch.x))
         let rightTapIndex = max (Float(firstTouch.x), Float(currentTouch.x))
         
-        let vw = Float(viewWidth)
+        let vw = Float(viewWidth) //normalizing by screen width removes the need to scale
+        let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
+        //indices are extended by the half-width of the Gaussian filtering kernel.
         
-        let leftIndex   = Int(Float(pointsToFit.count) * leftTapIndex / vw)
-        let rightIndex   = Int(Float(pointsToFit.count) * rightTapIndex / vw)
+        let leftIndex   = Int(Float(pointsToFit.count) * leftTapIndex / vw ) - gaussianKernelHalfWidth
+        let rightIndex   = Int(Float(pointsToFit.count) * rightTapIndex / vw ) + gaussianKernelHalfWidth
         //need to check for edge here.
         
-        let fittingSlice = Array(pointsToFit[leftIndex..<rightIndex])
         
+        let fittingSlice = Array(pointsToFit[leftIndex..<rightIndex])
+        //shorter than the filtered top hat
         return fittingSlice
     }
     
@@ -183,9 +181,8 @@ class FittingViewController: UIViewController {
         if gesture.state == UIGestureRecognizerState.began {
             
             locationOfBeganTap = gesture.location(in: self.view)
-            //should be dynamic
-            
             print ("began two finger pan", locationOfBeganTap!)
+            
             //console.dataSource()
             gaussianPath = gfit.buildGaussPath(pointsPSP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
             gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
@@ -193,7 +190,6 @@ class FittingViewController: UIViewController {
             
         } else if gesture.state == UIGestureRecognizerState.changed {
             currentLocationOfTap = gesture.location(in: self.view)
-        
             
             let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!)
             
@@ -201,19 +197,14 @@ class FittingViewController: UIViewController {
             let screenTopHat = lastDrawnFilteredTopHat.map {th in Float(locationOfBeganTap!.y) - th}
             
             let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen points
-            print (screenTopHat.count, target.count)
+            //print (screenTopHat.count, target.count, locationOfBeganTap!, currentLocationOfTap!)
             
-            
-            // these ^^^ don't match!!! target is usually longer by about 20!
-            // NEED TO WRITE OUT ALL POINTS TO SEE WHAT IS GOING ON
-            
-            
-            
+    
             let SSD_size = Float(target.count)
             let normalisedSSD = calculateSSD (A: screenTopHat, B: target) / SSD_size
             //bad fit is red, good fit is green
             let color = fitColor(worstSSD : worstSSD, currentSSD: normalisedSSD)
-            //print (normalisedSSD, color)
+            print (normalisedSSD, color)
             //would be good at this point to save the best SSD with the fit so it can be
             //recovered by the user.
             CATransaction.begin()
