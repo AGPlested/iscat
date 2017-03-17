@@ -196,17 +196,19 @@ class FittingViewController: UIViewController {
             let lastDrawnFilteredTopHat = gfit.filteredTopHat
             let screenTopHat = lastDrawnFilteredTopHat.map {th in Float(locationOfBeganTap!.y) - th}
             
-            let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen points
+            let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
             //print (screenTopHat.count, target.count, locationOfBeganTap!, currentLocationOfTap!)
             
-    
             let SSD_size = Float(target.count)
             let normalisedSSD = calculateSSD (A: screenTopHat, B: target) / SSD_size
-            //bad fit is red, good fit is green
+            // bad fit is red, good fit is green
             let color = fitColor(worstSSD : worstSSD, currentSSD: normalisedSSD)
             print (normalisedSSD, color)
-            //would be good at this point to save the best SSD with the fit so it can be
-            //recovered by the user.
+            // would be good to save the best SSD with the fit so it can be
+            // recovered by the user.
+            // write out SSD and event length (in samples - convert easily later).
+            
+            // put the latest curve, colored to previous SSD.
             CATransaction.begin()
             CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
             gaussianLayer.path = gfit.buildGaussPath(pointsPSP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, window: fitWindow)
@@ -220,8 +222,7 @@ class FittingViewController: UIViewController {
             
             //provide a choice here to get rid of the fit.
             //but what gesture?
-            
-            //need to think about resolving/overwriting?
+            //what about resolving/overwriting?
             
             let graphicalAmplitude = Float((locationOfEndTap?.y)! - (locationOfBeganTap?.y)!)       //no conversion into real world units yet
             var fitEventToStore : chEvent?
@@ -241,7 +242,8 @@ class FittingViewController: UIViewController {
             fitEventToStore!.amplitude = Double(graphicalAmplitude)
             fitEventToStore!.length = fittedEnd - fittedStart
             
-            panCount += 1
+            panCount += 1               //not sure if this is useful now.
+           
             print (fitEventToStore!.printable())
             fitData.eventAppend(e: fitEventToStore!)
             
@@ -260,6 +262,7 @@ class FittingViewController: UIViewController {
             //print (String(format:"averageY: %@", averageY))
             
             fitLine = createHorizontalLine(startTap: locationOfBeganTap, endTap: locationOfBeganTap)
+            // would be nice to color by SSD too.
             FitView.layer.addSublayer(fitLine)
             
         } else if gesture.state == UIGestureRecognizerState.changed {

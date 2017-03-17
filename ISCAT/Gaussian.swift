@@ -114,7 +114,6 @@ func fitColor(worstSSD: Float, currentSSD: Float) -> UIColor {
     if val < 0.0 {val = 0.0}    //super safe - val must be between 0 and 1
     return UIColor(red: val, green: 1.0 - val, blue: 0.0, alpha: 1.0)
 }
-//cv.layer.addSublayer(gLayer)  is what is done with that...
 
 /*
  func createGaussianArray (mu: Float = 0.5) -> ([Float], [Float]) {
