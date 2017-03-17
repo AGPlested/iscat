@@ -181,8 +181,6 @@ class FittingViewController: UIViewController {
         } else if gesture.state == UIGestureRecognizerState.changed {
             currentLocationOfTap = gesture.location(in: self.view)
         
-            CATransaction.begin()
-            CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
             
             let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!)
             
@@ -193,22 +191,26 @@ class FittingViewController: UIViewController {
             print (screenTopHat, target)
             let SSD_size = Float(target.count)
             let normalisedSSD = calculateSSD (A: screenTopHat, B: target) / SSD_size
-            
-            gaussianLayer.path = gfit.buildGaussPath(pointsPSP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, window: fitWindow)
+            //bad fit is red, good fit is green
             let color = fitColor(worstSSD : worstSSD, currentSSD: normalisedSSD)
-            
             //print (normalisedSSD, color)
+            //would be good at this point to save the best SSD with the fit so it can be
+            //recovered by the user.
+            CATransaction.begin()
+            CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
+            gaussianLayer.path = gfit.buildGaussPath(pointsPSP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, window: fitWindow)
             gaussianLayer.strokeColor = color.cgColor
-            
             CATransaction.commit()
-            
-            
-            //FitView.layer.addSublayer(gaussianLayer)
             
         } else if gesture.state == UIGestureRecognizerState.ended {
             
             locationOfEndTap = gesture.location(in: self.view)
             print ("end two finger pan", locationOfEndTap!)
+            
+            //provide a choice here to get rid of the fit.
+            //but what gesture.
+            
+            //need to think about resolving/overwriting?
             
             let graphicalAmplitude = Float((locationOfEndTap?.y)! - (locationOfBeganTap?.y)!)       //no conversion into real world units yet
             var fitEventToStore : chEvent?
