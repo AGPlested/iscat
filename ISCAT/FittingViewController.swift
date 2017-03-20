@@ -1,4 +1,3 @@
-//
 //  FittingViewController.swift
 //  ISCAT
 //
@@ -24,7 +23,7 @@ class FittingViewController: UIViewController {
     var gaussianPath: CGPath!
     var localCreationID = 0
     
-    let gfit = GaussianFit(filter: 0.05)     //default fc as a function of sample frequency - should be a setting
+    let gfit = GaussianFit(filter: 0.05)    //default fc as a function of sample frequency - should be a setting
     
     var fitData = eventList()               //from Event.swift
     
@@ -60,13 +59,11 @@ class FittingViewController: UIViewController {
     var averageY: CGFloat = 0.0
     //want to store this for some events later (Could calculate at the time?)
     
-    
     @IBOutlet weak var console: UITableView!        //console is not used yet
     @IBOutlet weak var FitView: UIView!
     @IBOutlet weak var positionLabel: UILabel!
     @IBOutlet weak var BackButton: UIButton!
-    
-    
+        
     func fitTraceView() {
         //draw a fixed data trace on the screen
         
@@ -185,27 +182,24 @@ class FittingViewController: UIViewController {
     }
     
     @IBAction func drawnFitTap(_ sender: UITapGestureRecognizer) {
-        print ("single tap")
+        print ("Single tap")
         let view = sender.view
-        //print (view?.layer.sublayers!)
         let loc = sender.location(in: view)
-        print (loc)
-
+        
         if let hitting = view?.layer.hitTest(loc) {
-            for hitt in hitting.sublayers! {
-                if let hitCustom = hitt as? CustomLayer {
-                    let location = hitCustom.convert(loc, from: hitCustom.superlayer)
-                    print (location, hitCustom)// Where you pressed
-                    if (hitCustom.path?.contains(location))!  {
-                        print (hitCustom.localID!)
+            if hitting.sublayers != nil {
+                for hitt in hitting.sublayers! {
+                    if let hitCustom = hitt as? CustomLayer {
+                        if (hitCustom.path?.contains(loc))!  {
+                            print ("You hit ", hitCustom.localID!)
+                            //print (loc, hitCustom)// Where pressed
+                            let eventTapped = fitData.list.first(where: {$0.localID == hitCustom.localID!})
+                            print (eventTapped?.printable())
+                            
+                        }
                     }
                 }
             }
-        
-            //{ // Optional, if you are inside its content path
-                //print("Hit customLayer \(ID)" ) // Do something
-            
-            //}
         }
     }
     
@@ -213,16 +207,14 @@ class FittingViewController: UIViewController {
         if gesture.state == UIGestureRecognizerState.began {
             
             locationOfBeganTap = gesture.location(in: self.view)
-            print ("began one finger pan", locationOfBeganTap!)
+            print ("Began one finger pan.", locationOfBeganTap!)
             localCreationID += 1
             // the current creation ID counter will be stored at the end of the gesture
             //console.dataSource()
             gaussianPath = gfit.buildGaussPath(pointsPSP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
             gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
             gaussianLayer.localID = localCreationID
-            //gaussianLayer.zPosition = 100.0
             // have some kind of data storage here so event created is linked to layer for later
-            // editing
             FitView.layer.addSublayer(gaussianLayer)
             
         } else if gesture.state == UIGestureRecognizerState.changed {
@@ -234,7 +226,7 @@ class FittingViewController: UIViewController {
             let screenTopHat = lastDrawnFilteredTopHat.map {th in Float(locationOfBeganTap!.y) - th}
             
             let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
-            //print (screenTopHat.count, target.count, locationOfBeganTap!, currentLocationOfTap!)
+    
             
             let SSD_size = Float(target.count)
             let normalisedSSD = calculateSSD (A: screenTopHat, B: target) / SSD_size
