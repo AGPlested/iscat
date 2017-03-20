@@ -205,7 +205,7 @@
                                                 <rect key="frame" x="0.0" y="28" width="359" height="60"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="aC9-Wd-R8j" id="So2-uO-jEc">
-                                                    <rect key="frame" x="0.0" y="0.0" width="359" height="59"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="359" height="59.5"/>
                                                     <autoresizingMask key="autoresizingMask"/>
                                                     <subviews>
                                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Label" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="XPN-aa-5LY">
@@ -271,7 +271,7 @@
                                 <rect key="frame" x="0.0" y="28" width="1024" height="44"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="BhV-b8-N0Q" id="s3B-8E-23B">
-                                    <rect key="frame" x="0.0" y="0.0" width="1024" height="43"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="1024" height="43.5"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                 </tableViewCellContentView>
                             </tableViewCell>
@@ -328,6 +328,7 @@
                                 <connections>
                                     <outletCollection property="gestureRecognizers" destination="OMN-Ji-Qkd" appends="YES" id="g4D-da-w5n"/>
                                     <outletCollection property="gestureRecognizers" destination="aya-eI-gmJ" appends="YES" id="bvg-o4-NH0"/>
+                                    <outletCollection property="gestureRecognizers" destination="535-yT-Dw2" appends="YES" id="ltS-Md-cen"/>
                                 </connections>
                             </view>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="I8c-zN-Ikn">
@@ -373,16 +374,21 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="fgE-OJ-sE6" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <panGestureRecognizer minimumNumberOfTouches="1" maximumNumberOfTouches="1" id="OMN-Ji-Qkd">
+                <panGestureRecognizer minimumNumberOfTouches="2" maximumNumberOfTouches="2" id="OMN-Ji-Qkd">
                     <connections>
                         <action selector="fitPan:" destination="6Sd-DR-cLT" id="Iz6-cV-TyM"/>
                     </connections>
                 </panGestureRecognizer>
-                <panGestureRecognizer minimumNumberOfTouches="2" maximumNumberOfTouches="2" id="aya-eI-gmJ">
+                <panGestureRecognizer minimumNumberOfTouches="1" maximumNumberOfTouches="1" id="aya-eI-gmJ">
                     <connections>
                         <action selector="fit2Pan:" destination="6Sd-DR-cLT" id="IkW-0O-urN"/>
                     </connections>
                 </panGestureRecognizer>
+                <tapGestureRecognizer id="535-yT-Dw2">
+                    <connections>
+                        <action selector="drawnFitTap:" destination="6Sd-DR-cLT" id="dUh-sp-wOF"/>
+                    </connections>
+                </tapGestureRecognizer>
             </objects>
             <point key="canvasLocation" x="1677.5390625" y="154.6875"/>
         </scene>

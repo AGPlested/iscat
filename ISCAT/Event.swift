@@ -17,8 +17,10 @@ enum Entries: String {
 
 class Event {
     var timePt: Float = 0      //event at 0 ms by default
-    var order: Int = 0         //default list order is 0
+    var order: Int = 0         //default list position is 0
     let kindOfEntry: Entries
+    //local ID in a fit window. might be good to store the CALayer ID here??
+    var localID: Int?
     //event will be date-stamped when registered to an event list
     var registered: String?
     

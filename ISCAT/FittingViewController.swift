@@ -20,8 +20,9 @@ class FittingViewController: UIViewController {
     var panCount : Int = 0          //not used
     var swipeCount : Int = 0        //never used
     var fitLine: CAShapeLayer!
-    var gaussianLayer: CAShapeLayer!
+    var gaussianLayer: CustomLayer!
     var gaussianPath: CGPath!
+    var localCreationID = 0
     
     let gfit = GaussianFit(filter: 0.05)     //default fc as a function of sample frequency - should be a setting
     
@@ -103,7 +104,7 @@ class FittingViewController: UIViewController {
     }
     
     //called when user starts a pan
-    func createHorizontalLine (startTap: CGPoint!, endTap: CGPoint!) -> CAShapeLayer {
+    func createHorizontalLine (startTap: CGPoint!, endTap: CGPoint!) -> CustomLayer {
         
         print ("drawing line:", startTap!, endTap!)
         //rough conversion of y value
@@ -114,7 +115,7 @@ class FittingViewController: UIViewController {
         
         let thickness: CGFloat = 9.0
 
-        let fitLayer = CAShapeLayer()
+        let fitLayer = CustomLayer()        //subclass of CAShapeLayer with ID
         fitLayer.path = pathOfFitLine(startPt: startPoint, endPt: endPoint)     //get path for line
         fitLayer.strokeColor = UIColor.red.cgColor
         fitLayer.fillColor = nil
@@ -138,10 +139,17 @@ class FittingViewController: UIViewController {
         let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
         //indices are extended by the half-width of the Gaussian filtering kernel.
         
-        let leftIndex   = Int(Float(pointsToFit.count) * leftTapIndex / vw ) - gaussianKernelHalfWidth
-        let rightIndex   = Int(Float(pointsToFit.count) * rightTapIndex / vw ) + gaussianKernelHalfWidth
-        //need to check for edge here.
+        var leftIndex   = Int(Float(pointsToFit.count) * leftTapIndex / vw ) - gaussianKernelHalfWidth
+        var rightIndex   = Int(Float(pointsToFit.count) * rightTapIndex / vw ) + gaussianKernelHalfWidth
         
+        //check for edge here -protect against illegal indices
+        if leftIndex < 0 {leftIndex = 0}
+        if leftIndex > pointsToFit.count {
+            leftIndex = pointsToFit.count
+            rightIndex = pointsToFit.count
+        }
+        
+        if rightIndex > pointsToFit.count {rightIndex = pointsToFit.count}
         
         let fittingSlice = Array(pointsToFit[leftIndex..<rightIndex])
         //shorter than the filtered top hat
@@ -176,16 +184,45 @@ class FittingViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
- 
+    @IBAction func drawnFitTap(_ sender: UITapGestureRecognizer) {
+        print ("single tap")
+        let view = sender.view
+        //print (view?.layer.sublayers!)
+        let loc = sender.location(in: view)
+        print (loc)
+
+        if let hitting = view?.layer.hitTest(loc) {
+            for hitt in hitting.sublayers! {
+                if let hitCustom = hitt as? CustomLayer {
+                    let location = hitCustom.convert(loc, from: hitCustom.superlayer)
+                    print (location, hitCustom)// Where you pressed
+                    if (hitCustom.path?.contains(location))!  {
+                        print (hitCustom.localID!)
+                    }
+                }
+            }
+        
+            //{ // Optional, if you are inside its content path
+                //print("Hit customLayer \(ID)" ) // Do something
+            
+            //}
+        }
+    }
+    
     @IBAction func fit2Pan(_ gesture: UIPanGestureRecognizer) {
         if gesture.state == UIGestureRecognizerState.began {
             
             locationOfBeganTap = gesture.location(in: self.view)
-            print ("began two finger pan", locationOfBeganTap!)
-            
+            print ("began one finger pan", locationOfBeganTap!)
+            localCreationID += 1
+            // the current creation ID counter will be stored at the end of the gesture
             //console.dataSource()
             gaussianPath = gfit.buildGaussPath(pointsPSP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
             gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
+            gaussianLayer.localID = localCreationID
+            //gaussianLayer.zPosition = 100.0
+            // have some kind of data storage here so event created is linked to layer for later
+            // editing
             FitView.layer.addSublayer(gaussianLayer)
             
         } else if gesture.state == UIGestureRecognizerState.changed {
@@ -218,7 +255,7 @@ class FittingViewController: UIViewController {
         } else if gesture.state == UIGestureRecognizerState.ended {
             
             locationOfEndTap = gesture.location(in: self.view)
-            print ("end two finger pan", locationOfEndTap!)
+            print ("end one finger pan", locationOfEndTap!)
             
             //provide a choice here to get rid of the fit.
             //but what gesture?
@@ -227,12 +264,16 @@ class FittingViewController: UIViewController {
             let graphicalAmplitude = Float((locationOfEndTap?.y)! - (locationOfBeganTap?.y)!)       //no conversion into real world units yet
             var fitEventToStore : chEvent?
             
+            
+            
+            
             if graphicalAmplitude > 0 {
                 fitEventToStore = chEvent(eKind: .opening)
             } else {
                 fitEventToStore = chEvent(eKind: .shutting)         //this idea doesn't work because shuttings are not negative amp events!
             }
-            
+            // to retrieve event information from list later
+            fitEventToStore!.localID = localCreationID
             // acccount for reverse (R -> L pan) fits with min and max
             let fittedStart = min (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
             let fittedEnd = max (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
@@ -246,7 +287,8 @@ class FittingViewController: UIViewController {
            
             print (fitEventToStore!.printable())
             fitData.eventAppend(e: fitEventToStore!)
-            
+            //store information in that links this layer to this event and vice versa
+            print (fitEventToStore!.registered, gaussianLayer.localID)
         }
     }
    
@@ -256,7 +298,8 @@ class FittingViewController: UIViewController {
         if gesture.state == UIGestureRecognizerState.began {
             
             locationOfBeganTap = gesture.location(in: self.view)
-            print ("began one finger pan", locationOfBeganTap!)
+            print ("began two finger pan", locationOfBeganTap!)
+            localCreationID += 1
             
             averageY = (locationOfBeganTap?.y)!
             //print (String(format:"averageY: %@", averageY))
@@ -291,7 +334,9 @@ class FittingViewController: UIViewController {
                 locationOfEndTap = gesture.location(in: self.view)
                 print ("end pan", locationOfEndTap!, averageY)
                 let fitEventToStore = chEvent(eKind: .sojourn)
-                
+                fitEventToStore.localID = localCreationID
+                // to retrieve event information from list later
+                fitEventToStore.localID = localCreationID
                 // acccount for reverse (R -> L pan) fits with min and max
                 let fittedStart = min (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
                 let fittedEnd = max (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
@@ -302,7 +347,7 @@ class FittingViewController: UIViewController {
                 fitEventToStore.length = fittedEnd - fittedStart
                 
                 panCount += 1
-                print (fitEventToStore.printable())
+                print (fitEventToStore.printable(), fitEventToStore.localID)
                 fitData.eventAppend(e: fitEventToStore)
                 
             }
