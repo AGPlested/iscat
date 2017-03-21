@@ -12,6 +12,7 @@ import Accelerate
 
 class GaussianFit {
 
+    var drawnPath = [CGPoint]()
     var filteredTopHat = [Float]()
     var kernel = [Float]()                  //the filter kernel
     
@@ -36,7 +37,14 @@ class GaussianFit {
     func topHat (width: Int, height: Float) -> [Float] {
         let h = height
         let w = width
-        return Array<Float>(repeating: h, count: w)
+        let brimW = Int(width / 5)
+        
+        var hat = Array<Float>(repeating: h, count: w)
+        if brimW > 0 {
+            let brim = Array<Float>(repeating: 0.0, count: brimW)
+            hat = brim + hat + brim
+        }
+        return hat
     }
     
     func gaussian (x: Float, a: Float, b: Float, c: Float) -> Float32 {
@@ -84,11 +92,15 @@ class GaussianFit {
 
         let firstPoint = CGPoint (x: CGFloat(leftExtreme), y: CGFloat(base)) //draw left to right
         gaussPath.move(to: firstPoint)
-
+        
+        drawnPath = []
         for (xp, yp) in zip(xfs, filteredTopHat) {
             let gaussPoint = CGPoint (x:Double(leftExtreme + xp), y:Double(base - yp))
             gaussPath.addLine(to: gaussPoint)
+            drawnPath.append(gaussPoint)
         }
+        
+        print ("drawnPath", drawnPath)
         return gaussPath.cgPath
     }
     
@@ -97,6 +109,7 @@ class GaussianFit {
         let gLayer = CustomLayer()
         //let bounds = gPath.boundingBoxOfPath
         gLayer.path = gPath
+        gLayer.drawnPathPoints = drawnPath
         //print (gLayer.bounds, bounds)
         //gLayer.bounds = bounds      //need to set bounds for detection later?
         //gLayer.position = CGPoint(x: bounds.width*0.5, y: bounds.height*0.5)
@@ -109,7 +122,7 @@ class GaussianFit {
 
 class CustomLayer: CAShapeLayer {
     var localID: Int?
-  
+    var drawnPathPoints = [CGPoint]() ///not stored well at all!!!
 }
 
 func fitColor(worstSSD: Float, currentSSD: Float) -> UIColor {

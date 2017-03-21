@@ -18,6 +18,7 @@ enum Entries: String {
 class Event {
     var timePt: Float = 0      //event at 0 ms by default
     var order: Int = 0         //default list position is 0
+    var length: Float?         //some types of event have no meaningful duration
     let kindOfEntry: Entries
     //local ID in a fit window. might be good to store the CALayer ID here??
     var localID: Int?
@@ -35,7 +36,6 @@ class Event {
 
 class otherEvent: Event {
     //events and marks in the idealization that are not biophysical
-    var length: Float?
     var text: String = ""
     var name: String?
     
@@ -73,7 +73,7 @@ class chEvent: Event {
     //Would it be good to use a protocol to check that events conform?
     
     var amplitude: Double = 0     //zero by default (WHY DOUBLE?)
-    var length: Float = 0
+
     //no length by default (e.g. transition)
     
     init (eKind:Entries) {
@@ -86,21 +86,21 @@ class chEvent: Event {
         
         //dwell period in unknown/not marked state
         case .sojourn:
-            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, length, amplitude)
+            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, length!, amplitude)
         
         // open sojourn
         case .opening:
-            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, length, amplitude)
+            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, length!, amplitude)
         
         //shut sojourn
         case .shutting:
-            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, length, amplitude)
+            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, length!, amplitude)
             
         case .transition:
             return String (format:"%@ t. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, amplitude)
             
         case .artifact:
-            return String (format:"%@ t. %.2f ms, l. %.2f ms", kindOfEntry.rawValue, timePt, length)
+            return String (format:"%@ t. %.2f ms, l. %.2f ms", kindOfEntry.rawValue, timePt, length!)
             
         default:
             return String (format:"%@ , miscast as channel event", kindOfEntry.rawValue)
@@ -146,6 +146,36 @@ struct eventList {
         } else {
             return false
         }
+    }
+    
+    func hasEventWithID (ID: Int) -> Bool   {
+        if list.isEmpty {
+            return false
+        }
+        else {
+            for e in list {
+                if e.localID == ID {
+                    return true
+                }
+            }
+        }
+        //if no event with localID given is found
+        return false
+    }
+    
+    mutating func removeEventByLocalID (ID: Int) -> Bool {
+        if list.isEmpty {
+            return false
+        } else {
+            for i in 0 ..< list.count {
+                if list[i].localID == ID {
+                    list.remove(at: i)
+                    return true
+                }
+            }
+        }
+        //if no event with localID given is found
+        return false
     }
     
     mutating func removeEventsByKind (k : Entries) -> Bool {
@@ -242,13 +272,22 @@ struct eventList {
         return printableList
     }
     
-    func consolePrintable () -> String{
+    func consolePrintable (title: String = "") -> String{
         //compact list presentation for displaying in console boxes
+        var printableList : String
         //header
-        var printableList = String (format:"%@ list of %i events\n", sortType, list.count)
+        if title == "" {
+            printableList = String (format:"%@ list of %i events\n", sortType, list.count)
+        } else {
+            printableList = String (format:"%@ %i events\n", title, list.count)
+        }
         
         if list.isEmpty {
-            printableList = "no events"     //overwrite header
+            if title == "Selected" {
+                printableList = "Nothing selected"
+            } else {
+                printableList = "No events"     //overwrite header
+            }
         } else {
             for e in list {
                 printableList += (String(format:"%i %@\n", e.order, e.printable()))
