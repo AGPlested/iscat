@@ -107,12 +107,10 @@ class GaussianFit {
     func buildGaussLayer (gPath: CGPath) -> CustomLayer {
         
         let gLayer = CustomLayer()
-        //let bounds = gPath.boundingBoxOfPath
         gLayer.path = gPath
         gLayer.drawnPathPoints = drawnPath
-        //print (gLayer.bounds, bounds)
-        //gLayer.bounds = bounds      //need to set bounds for detection later?
-        //gLayer.position = CGPoint(x: bounds.width*0.5, y: bounds.height*0.5)
+        //rearrange to perform these actions more consistently
+        //print ("glayer", gLayer.drawnPathPoints)
         gLayer.strokeColor = UIColor.red.cgColor //color later based on LSQ
         gLayer.fillColor = nil
         gLayer.lineWidth =  5
@@ -122,7 +120,7 @@ class GaussianFit {
 
 class CustomLayer: CAShapeLayer {
     var localID: Int?
-    var drawnPathPoints = [CGPoint]() ///not stored well at all!!!
+    var drawnPathPoints = [CGPoint]() ///Needs to be stored each time!
 }
 
 func fitColor(worstSSD: Float, currentSSD: Float) -> UIColor {
