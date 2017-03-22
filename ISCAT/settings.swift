@@ -25,7 +25,7 @@ class SettingsList  {
     var header = SettingsItem(text: "Header", sValue: .integer(3000))
     
     //chunks to break trace data into
-    var basicChunk = SettingsItem(text: "Chunk Size", sValue: .integer(100))
+    var basicChunk = SettingsItem(text: "Chunk Size", sValue: .integer(1000))
     
     //working directory
     var workingPath = SettingsItem(text: "Working Path", sValue: .textParameter("Dropbox"))

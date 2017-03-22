@@ -112,6 +112,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
             let traceLayer = CAShapeLayer()
             traceLayer.path = tracePath.cgPath
             traceLayer.strokeColor = UIColor.black.cgColor
+            traceLayer.lineJoin = kCALineJoinRound
             traceLayer.fillColor = nil
             traceLayer.lineWidth = thickness
             v.layer.addSublayer(traceLayer)             //accumulate a bunch of anonymous layers.

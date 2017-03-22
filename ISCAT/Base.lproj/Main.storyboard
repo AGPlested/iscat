@@ -308,7 +308,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Hwh-Es-NiN">
-                                <rect key="frame" x="44" y="50" width="935" height="648"/>
+                                <rect key="frame" x="20" y="50" width="983" height="648"/>
                                 <subviews>
                                     <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="Ls5-le-KgW">
                                         <rect key="frame" x="0.0" y="0.0" width="483" height="128"/>
@@ -339,7 +339,7 @@
                                 </connections>
                             </view>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="I8c-zN-Ikn">
-                                <rect key="frame" x="44" y="724" width="267" height="21"/>
+                                <rect key="frame" x="20" y="724" width="267" height="21"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="267" id="feq-kS-oIb"/>
                                 </constraints>
@@ -368,7 +368,7 @@
                             <constraint firstItem="VJX-cb-k8a" firstAttribute="top" secondItem="I8c-zN-Ikn" secondAttribute="bottom" constant="23" id="92z-tB-QpP"/>
                             <constraint firstItem="h2w-bb-h7q" firstAttribute="trailing" secondItem="fHK-W8-i3O" secondAttribute="trailingMargin" id="BIW-5B-4Jj"/>
                             <constraint firstItem="I8c-zN-Ikn" firstAttribute="top" secondItem="Hwh-Es-NiN" secondAttribute="bottom" constant="26" id="czr-KX-Hz7"/>
-                            <constraint firstItem="Hwh-Es-NiN" firstAttribute="leading" secondItem="fHK-W8-i3O" secondAttribute="leadingMargin" constant="24" id="hgn-PI-Ztn"/>
+                            <constraint firstItem="Hwh-Es-NiN" firstAttribute="leading" secondItem="fHK-W8-i3O" secondAttribute="leadingMargin" id="hgn-PI-Ztn"/>
                             <constraint firstItem="I8c-zN-Ikn" firstAttribute="leading" secondItem="Hwh-Es-NiN" secondAttribute="leading" id="oSH-d6-70k"/>
                             <constraint firstItem="Hwh-Es-NiN" firstAttribute="centerX" secondItem="fHK-W8-i3O" secondAttribute="centerX" id="s0V-8S-bcx"/>
                             <constraint firstItem="pI9-TX-Sog" firstAttribute="leading" secondItem="fHK-W8-i3O" secondAttribute="leadingMargin" constant="13" id="uY4-TM-kA5"/>

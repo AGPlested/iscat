@@ -15,6 +15,14 @@ enum Entries: String {
     case sojourn, transition, opening, shutting, artifact, skipped, begin, end, misc, mark, comment, unclassified
 }
 
+struct StoredEvent {
+    var timePt: Float = 0
+    var length: Float?
+    var amplitude: Float?
+    var localID: Int?
+    var registered: String?
+}
+
 class Event {
     var timePt: Float = 0      //event at 0 ms by default
     var order: Int = 0         //default list position is 0
@@ -33,6 +41,7 @@ class Event {
         return "Undefined"
     }
 }
+
 
 class otherEvent: Event {
     //events and marks in the idealization that are not biophysical

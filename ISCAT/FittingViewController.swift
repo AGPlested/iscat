@@ -28,10 +28,13 @@ class FittingViewController: UIViewController {
     
     var fitData = eventList()               //from Event.swift
     var selected = eventList()
+    
+    //storage at the start of a dragging event
     var selectedTransforms = [Int: CATransform3D]()
     var selectedFitPoints = [Int: [CGPoint]]()
+    var selectedEvents = [Int: StoredEvent]()       //stored event is a struct that stores values from Event classes
     
-    var worstSSD : Float = 1e5              //per point
+    var worstSSD : Float = 600 * 600               //per point, missing by entire screen
     
     //would be nice just to take the coordinates from the previous layout but couldn't work out how to do it.
     let yPlotOffset = CGFloat(200)
@@ -74,10 +77,10 @@ class FittingViewController: UIViewController {
         //draw a fixed data trace on the screen
         
         screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)    //900
-        print ("traceview", pointsToFit.count, screenPointsPerDataPoint!)
+        print ("traceview: pointsTF, sPPDP", pointsToFit.count, screenPointsPerDataPoint!)
         
         let firstDataPoint = CGPoint(x:0, y:yPlotOffset)
-        var drawnDataPoint = CGPoint(x:0, y:yPlotOffset)
+        var drawnDataPoint : CGPoint
         
         FitView.backgroundColor = UIColor.white
         FitView.translatesAutoresizingMaskIntoConstraints = false
@@ -88,13 +91,15 @@ class FittingViewController: UIViewController {
         tracePath.move(to: firstDataPoint)
         
         for (index, point) in pointsToFit.enumerated() {
-            drawnDataPoint = CGPoint(x: viewWidth * CGFloat(index) / CGFloat(pointsToFit.count) , y: yPlotOffset + traceHeight * CGFloat(point) / 32536.0)
+            let xPoint = CGFloat ( screenPointsPerDataPoint! * Float (index) )
+            drawnDataPoint = CGPoint(x: xPoint, y: yPlotOffset + traceHeight * CGFloat(point) / 32536.0)
             tracePath.addLine(to: drawnDataPoint)
         }
         
         // render to layer
         let traceLayer = CAShapeLayer()
         traceLayer.path = tracePath.cgPath
+        traceLayer.lineJoin = kCALineJoinRound
         traceLayer.strokeColor = UIColor.black.cgColor
         traceLayer.fillColor = nil
         traceLayer.lineWidth = thickness
@@ -166,14 +171,16 @@ class FittingViewController: UIViewController {
     @IBAction func drawnFitTap(_ sender: UITapGestureRecognizer) {
         print ("Single tap.")
         let view = sender.view
-        let loc = sender.location(in: view)
+        var loc = sender.location(in: view)
         
         if let hitting = view?.layer.hitTest(loc) {
             if hitting.sublayers != nil {
                 for hitt in hitting.sublayers! {
                     if let hitCustom = hitt as? CustomLayer {
-                        //this fails following a translation - need to convert 'loc'
-                        //select/deselect still works if you tap the original location
+                    
+                        //print ("Loc before", loc)
+                        loc = hitCustom.convert(loc, from: hitCustom.superlayer) //move select/deselect detections to right place
+                        //print ("Loc after", loc)
                         if (hitCustom.path?.contains(loc))!  {
                             print ("You hit \(hitCustom.localID!) at \(loc)")
                             let tappedEvent = fitData.list.first(where: {$0.localID == hitCustom.localID!})
@@ -183,12 +190,14 @@ class FittingViewController: UIViewController {
                                 //animated
                                 CATransaction.begin()
                                 hitCustom.lineWidth = 5.0
+                                hitCustom.opacity = 1
                                 CATransaction.commit()
                                 print ("Deselected event \(hitCustom.localID!)")
                             } else {
                                 selected.eventAppend(e: tappedEvent!)
                                 CATransaction.begin()
                                 hitCustom.lineWidth = 10.0
+                                hitCustom.opacity = 0.5
                                 CATransaction.commit()
                                 print ("Selected event \(hitCustom.localID!)")
                             }
@@ -199,7 +208,7 @@ class FittingViewController: UIViewController {
                             
                 
                             
-                            //selectDONE, deselectDONE, delete, move, show....
+                            //selectDONE, deselectDONE, delete, move DONE, show DONE....
 
                             
                         }
@@ -234,9 +243,17 @@ class FittingViewController: UIViewController {
                     for layer in (gesture.view?.layer.sublayers!)! {
                         if let cLayer = layer as? CustomLayer {
                             if cLayer.localID == event.localID {
+                                                                var stored = StoredEvent()
+                                stored.timePt = event.timePt
+                                stored.length = event.length
+                                //stored.amplitude = event.amplitude ///will need to change this later
+                                stored.localID = cLayer.localID!
+                                
+                                selectedEvents[cLayer.localID!] = stored
                                 selectedTransforms[cLayer.localID!] = cLayer.transform
                                 selectedFitPoints[cLayer.localID!] = cLayer.drawnPathPoints
-                                //use a dictionary to make sure we get the right transform back later!
+
+                                //use dictionaries to make sure we get the right info back later!
                             }
                         }
                     }
@@ -245,6 +262,8 @@ class FittingViewController: UIViewController {
                 
         } else if gesture.state == UIGestureRecognizerState.changed {
             currentLocationOfTap = gesture.location(in: self.view)
+            //globally transform to be relative to trace window?
+            
             let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
             
             if selected.list.isEmpty {
@@ -275,35 +294,35 @@ class FittingViewController: UIViewController {
                 CATransaction.commit()
             
             } else {
+                // some events are selected
                 // move paths around with live SSD
-                // assuming all events are chEvents
+                // all events are chEvents
                 
-                for event in selected.list {
-                    //screen coordinates so no conversion needed
-    
-                    let targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: event as! chEvent, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
-                    
-                    let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
+                for (eNum, event) in selected.list.enumerated() {
                     for layer in (gesture.view?.layer.sublayers!)! {
                         if let cLayer = layer as? CustomLayer {
-                            
                             if cLayer.localID == event.localID {
+                                print ("dragging custom layer \(cLayer.localID!)")
                                 
-                                print ("dragging \(cLayer.localID)")
+                                //pass initial event to get start of event at start of drag, not the updating event
+                                let targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
                                 
-                                //populate array with y-points from Path for SSD
+                                let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
+                                
+                                //populate array with current y-points from Path for SSD
                                 var fitPoints = [Float]()
-                                for point in selectedFitPoints[cLayer.localID!]! {
+                                for point in cLayer.drawnPathPoints {
                                     fitPoints.append(Float(point.y))
                                 }
-                                
+                                print ("dPP0: ", cLayer.drawnPathPoints[0])
+                                print ("event start:", event.timePt - event.length! / 5 - Float(gaussianKernelHalfWidth) * screenPointsPerDataPoint!)
                                 //calculate SSD 
                                 let SSD_size = Float(target.count)
-                                print (fitPoints, target)
+                                //print (fitPoints, target) //target is off in x but fitpoints is disastrous in y (much too large!!!)
                                 let normalisedSSD = calculateSSD (A: fitPoints, B: target) / SSD_size
                                 // bad fit is red, good fit is green
                                 let color = fitColor(worstSSD : worstSSD, currentSSD: normalisedSSD)
-                                print (normalisedSSD, color)
+                                print ("SSD, col, fitLen, targLen: ", normalisedSSD, color, fitPoints.count, target.count)
 
                                 //translate the path
                                 let originalTransform = selectedTransforms[cLayer.localID!]
@@ -311,29 +330,35 @@ class FittingViewController: UIViewController {
                                 // taps are within the layer so relative calculations not needed.
                                 let tx = (currentLocationOfTap!.x - locationOfBeganTap!.x + originalTransform!.m41)
                                 let ty = (currentLocationOfTap!.y - locationOfBeganTap!.y + originalTransform!.m42)
-                                //print (tx,ty,cLayer.transform.m41, cLayer.transform.m42)
+                                print ("ctn \(tx,ty,originalTransform!.m41, originalTransform!.m42)")
                                 let newTransform = CATransform3DMakeTranslation(tx, ty, 0)
                                 
                                 CATransaction.begin()
                                 CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
                                 cLayer.transform = newTransform
-                                print ("ctn \(cLayer.transform.m41, cLayer.transform.m42)")
-                                gaussianLayer.strokeColor = color.cgColor
+                                cLayer.strokeColor = color.cgColor
                                 CATransaction.commit()
                                 
-                                //update the points stored in the CustomLayer
+                                //update the fit points (in screen coordinates) stored in the CustomLayer
                                 //subtracting the original transform because included.
                                 var updatedFitPoints = [CGPoint]()
                                 let incrementalTransformX = tx - originalTransform!.m41
                                 let incrementalTransformY = ty - originalTransform!.m42
                                 
+                                //update with current transform from points at the start of the drag.
                                 for point in selectedFitPoints[cLayer.localID!]! {
                                     let newPoint = CGPoint(x: point.x + incrementalTransformX, y: point.y + incrementalTransformY)
                                     updatedFitPoints.append(newPoint)
                                 
-                                cLayer.drawnPathPoints = updatedFitPoints
-                                    
-                                    
+                                cLayer.drawnPathPoints = updatedFitPoints   //the current points for the next round of SSD
+                                
+                                //update with current transform from timePt at the start of the drag.
+                                let savedEvent = selectedEvents[cLayer.localID!]
+                                event.timePt = (savedEvent?.timePt)! + Float(incrementalTransformX)
+                                
+                                //store updated event in selected list
+                                selected.list[eNum] = event
+                            
                                 }
                             }
                         }
@@ -392,7 +417,7 @@ class FittingViewController: UIViewController {
                                 let translation = cLayer.transform
                                 //should do something about baseline/amplitude too
                                 //length did not change
-                                event.timePt += Float(translation.m41)
+                                event.timePt = (selectedEvents[cLayer.localID!]?.timePt)! + Float(translation.m41)
                             }
                         }
                     }
