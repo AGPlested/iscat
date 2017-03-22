@@ -23,7 +23,6 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
     var s = SettingsList()
     
     var pointIndex : Int = 0
-    //var tScale = 1          //NOT USED this is terrible mixing up t and x
     
     
     var traceLength : Int?

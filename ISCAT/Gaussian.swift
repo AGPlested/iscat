@@ -71,31 +71,33 @@ class GaussianFit {
     let window = CGPoint (x: 400.0, y: 400.0)
     */
     
-    func buildGaussPath (pointsPSP: Float, firstTouch: CGPoint, currentTouch: CGPoint, window:CGPoint) -> CGPath {
+    func buildGaussPath (screenPPDP: Float, firstTouch: CGPoint, currentTouch: CGPoint, window:CGPoint) -> CGPath {
 
         // **** window **** is not used
-        // pointsPSP is the number of Screen points per data point - to keep filtering constant
+        // screenPPDP is the number of screen points per data point - to keep filtering constant
         // float for maths later
         let leftExtreme = Float(min(firstTouch.x, currentTouch.x))
-        let gWidth = (Float(max(firstTouch.x, currentTouch.x)) - leftExtreme) / pointsPSP
+        let gWidth = (Float(max(firstTouch.x, currentTouch.x)) - leftExtreme) / screenPPDP
         let base = Float(firstTouch.y)
         let amp = Float(firstTouch.y - currentTouch.y)
 
-        let iWidth = Int(gWidth)
-        
+        let iWidth = Int(gWidth)        //in data points
         let topHatInput = topHat(width: iWidth, height: amp)
+        
         filteredTopHat = conv(x: topHatInput, k: kernel)
+        
+        let fringe =  Float(filteredTopHat.count - iWidth) * screenPPDP / 2    //need to move drawn curve left by this much.
         let xc = filteredTopHat.count
         let xf = Array(0...xc)
-        let xfs = xf.map {x in Float(x) * pointsPSP}
+        let xfs = xf.map {x in Float(x) * screenPPDP}
         let gaussPath = UIBezierPath()
 
-        let firstPoint = CGPoint (x: CGFloat(leftExtreme), y: CGFloat(base)) //draw left to right
+        let firstPoint = CGPoint (x: CGFloat(leftExtreme - fringe), y: CGFloat(base)) //draw left to right
         gaussPath.move(to: firstPoint)
         
         drawnPath = []
         for (xp, yp) in zip(xfs, filteredTopHat) {
-            let gaussPoint = CGPoint (x:Double(leftExtreme + xp), y:Double(base - yp))
+            let gaussPoint = CGPoint (x:Double(leftExtreme - fringe + xp), y:Double(base - yp))
             gaussPath.addLine(to: gaussPoint)
             drawnPath.append(gaussPoint)
         }

@@ -72,6 +72,7 @@ class FittingViewController: UIViewController {
     @IBOutlet weak var BackButton: UIButton!
     @IBOutlet weak var selectedLabel: UILabel!
     
+    @IBOutlet weak var PopUpControl: UISegmentedControl!
         
     func fitTraceView() {
         //draw a fixed data trace on the screen
@@ -179,10 +180,12 @@ class FittingViewController: UIViewController {
                     if let hitCustom = hitt as? CustomLayer {
                     
                         //print ("Loc before", loc)
-                        loc = hitCustom.convert(loc, from: hitCustom.superlayer) //move select/deselect detections to right place
+                        //this gets flaky and mixed up after awhile
+                        loc = hitCustom.convert(loc, from: hitCustom.superlayer) // try ? NO? move select/deselect detections to right place
                         //print ("Loc after", loc)
+                        //print ("hC.sl,\(hitCustom.superlayer)")
                         if (hitCustom.path?.contains(loc))!  {
-                            print ("You hit \(hitCustom.localID!) at \(loc)")
+                            print ("You hit event \(hitCustom.localID!) at \(loc)")
                             let tappedEvent = fitData.list.first(where: {$0.localID == hitCustom.localID!})
                             
                             if selected.hasEventWithID(ID: hitCustom.localID!) {
@@ -218,6 +221,27 @@ class FittingViewController: UIViewController {
         }
     }
     
+    @IBAction func longPress(_ sender: UILongPressGestureRecognizer) {
+        PopUpControl.isHidden = false
+        PopUpControl.layer.zPosition = 1000
+        
+    }
+    
+    //not really nice behaviour. Disappears but not tidied up
+    @IBAction func popUpWasChanged(_ sender: UISegmentedControl, forEvent event: UIEvent) {
+        print ("popup changed")
+        PopUpControl.isHidden = true
+        PopUpControl.selectedSegmentIndex = -1
+    }
+    //this doesn't do a thing, yet
+    @IBAction func touchPopUp(_ sender: UISegmentedControl, forEvent event: UIEvent) {
+        print ("touched pop up")
+    }
+    //this doesn't do a thing, yet
+    @IBAction func touchOutsidePopUpControl(_ sender: Any)  {
+        PopUpControl.isHidden = true
+    }
+    
     @IBAction func fit2Pan(_ gesture: UIPanGestureRecognizer) {
         if gesture.state == UIGestureRecognizerState.began {
             
@@ -228,7 +252,7 @@ class FittingViewController: UIViewController {
                 localCreationID += 1
                 
                 // console.dataSource()
-                gaussianPath = gfit.buildGaussPath(pointsPSP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
+                gaussianPath = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
                 gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
                 gaussianLayer.localID = localCreationID
                 // event created is linked to layer for later
@@ -237,13 +261,21 @@ class FittingViewController: UIViewController {
             else {
             //move selected
                 print ("Began one finger drag of \(selected).", locationOfBeganTap!)
-                //should store current selected layer transforms
+                
+                //store initial selected layer transforms
+                //store initial coordinates of selected events
+                //store x, y points of initial fits as drawn on the screen
+                
+                //provide empty dictionaries for the start of the drag.
+                selectedEvents = [:]
                 selectedTransforms = [:]
+                selectedFitPoints = [:]
+                
                 for event in selected.list {
                     for layer in (gesture.view?.layer.sublayers!)! {
                         if let cLayer = layer as? CustomLayer {
                             if cLayer.localID == event.localID {
-                                                                var stored = StoredEvent()
+                                var stored = StoredEvent()          //struct not class
                                 stored.timePt = event.timePt
                                 stored.length = event.length
                                 //stored.amplitude = event.amplitude ///will need to change this later
@@ -252,8 +284,6 @@ class FittingViewController: UIViewController {
                                 selectedEvents[cLayer.localID!] = stored
                                 selectedTransforms[cLayer.localID!] = cLayer.transform
                                 selectedFitPoints[cLayer.localID!] = cLayer.drawnPathPoints
-
-                                //use dictionaries to make sure we get the right info back later!
                             }
                         }
                     }
@@ -288,7 +318,7 @@ class FittingViewController: UIViewController {
                 // put the latest curve, colored to previous SSD.
                 CATransaction.begin()
                 CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
-                gaussianLayer.path = gfit.buildGaussPath(pointsPSP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, window: fitWindow)
+                gaussianLayer.path = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, window: fitWindow)
                 gaussianLayer.drawnPathPoints = gfit.drawnPath
                 gaussianLayer.strokeColor = color.cgColor
                 CATransaction.commit()
@@ -296,7 +326,7 @@ class FittingViewController: UIViewController {
             } else {
                 // some events are selected
                 // move paths around with live SSD
-                // all events are chEvents
+                // all events are chEvents - therefore references to classes.
                 
                 for (eNum, event) in selected.list.enumerated() {
                     for layer in (gesture.view?.layer.sublayers!)! {
@@ -314,8 +344,8 @@ class FittingViewController: UIViewController {
                                 for point in cLayer.drawnPathPoints {
                                     fitPoints.append(Float(point.y))
                                 }
-                                print ("dPP0: ", cLayer.drawnPathPoints[0])
-                                print ("event start:", event.timePt - event.length! / 5 - Float(gaussianKernelHalfWidth) * screenPointsPerDataPoint!)
+                                print ("dPPx0: ", cLayer.drawnPathPoints[0])
+                                print ("event start x:", event.timePt - event.length! / 5 - Float(gaussianKernelHalfWidth) * screenPointsPerDataPoint!)
                                 //calculate SSD 
                                 let SSD_size = Float(target.count)
                                 //print (fitPoints, target) //target is off in x but fitpoints is disastrous in y (much too large!!!)
@@ -339,13 +369,12 @@ class FittingViewController: UIViewController {
                                 cLayer.strokeColor = color.cgColor
                                 CATransaction.commit()
                                 
-                                //update the fit points (in screen coordinates) stored in the CustomLayer
-                                //subtracting the original transform because included.
-                                var updatedFitPoints = [CGPoint]()
+                                //subtracting the original transform because its included.
                                 let incrementalTransformX = tx - originalTransform!.m41
                                 let incrementalTransformY = ty - originalTransform!.m42
                                 
-                                //update with current transform from points at the start of the drag.
+                                //update with current transform from points (in screen coordinates) at the start of the drag.
+                                var updatedFitPoints = [CGPoint]()
                                 for point in selectedFitPoints[cLayer.localID!]! {
                                     let newPoint = CGPoint(x: point.x + incrementalTransformX, y: point.y + incrementalTransformY)
                                     updatedFitPoints.append(newPoint)
@@ -357,7 +386,7 @@ class FittingViewController: UIViewController {
                                 event.timePt = (savedEvent?.timePt)! + Float(incrementalTransformX)
                                 
                                 //store updated event in selected list
-                                selected.list[eNum] = event
+                                //selected.list[eNum] = event
                             
                                 }
                             }
@@ -373,7 +402,7 @@ class FittingViewController: UIViewController {
             
         } else if gesture.state == UIGestureRecognizerState.ended {
             if selected.list.isEmpty {
-            // store event details
+            // store new event details
                 
             locationOfEndTap = gesture.location(in: self.view)
             print ("end one finger pan", locationOfEndTap!)
@@ -406,7 +435,7 @@ class FittingViewController: UIViewController {
             print (fitEventToStore!.printable())
             fitData.eventAppend(e: fitEventToStore!)
             //store information in that links this layer to this event and vice versa
-            print (fitEventToStore!.registered, gaussianLayer.localID!)
+            print (fitEventToStore!.registered!, gaussianLayer.localID!)
             } else {
                 
                 //finish up with event dragging
@@ -414,15 +443,11 @@ class FittingViewController: UIViewController {
                     for layer in (gesture.view?.layer.sublayers!)! {
                         if let cLayer = layer as? CustomLayer {
                             if cLayer.localID == event.localID {
-                                let translation = cLayer.transform
-                                //should do something about baseline/amplitude too
-                                //length did not change
-                                event.timePt = (selectedEvents[cLayer.localID!]?.timePt)! + Float(translation.m41)
+                                print ("Finished dragging event \(cLayer.localID)")
+                                //each event was updated in place during the drag
                             }
                         }
                     }
-                    selected.removeEventByLocalID(ID: event.localID!)
-                    selected.eventAppend(e: event)
                 }
             }
         }
@@ -454,6 +479,7 @@ class FittingViewController: UIViewController {
             let startPoint = CGPoint(x: ((locationOfBeganTap?.x)! - 50)  , y: averageY)
             let endPoint = CGPoint(x: ((currentLocationOfTap?.x)! - 50) , y: averageY)
 
+            
             //no animations
             //https://github.com/iamdoron/panABallAttachedToALine/blob/master/panLineRotation/ViewController.swift
             //
@@ -483,7 +509,7 @@ class FittingViewController: UIViewController {
                 fitEventToStore.length = fittedEnd - fittedStart
                 
                 panCount += 1
-                print (fitEventToStore.printable(), fitEventToStore.localID)
+                print (fitEventToStore.printable(), fitEventToStore.localID!)
                 fitData.eventAppend(e: fitEventToStore)
                 
             }
