@@ -246,23 +246,41 @@ class FittingViewController: UIViewController {
     
     
     @IBAction func pinchEvent(_ gesture: UIPinchGestureRecognizer) {
+        // if events are selected, this gesture will shrink or grow them.
+        
+        let pinchView = gesture.view
         if gesture.state == UIGestureRecognizerState.began {
             if selected.list.isEmpty  {
                 print ("pinch but nothing selected")
             } else {
-                print ("pinch selected began")
+                //position is the average of the two touches
+                //should probably store the initial positions and alter on difference
+                //also store selected stats for live modifcation 
+                //as in drag
+                let t0 = gesture.location(in: pinchView)
+                print ("pinch selected began", t0)
             }
         } else if gesture.state == UIGestureRecognizerState.changed {
             if selected.list.isEmpty {
                 print ("nothing selected to pinch")
             } else {
-                print ("pinch selected underway")
+                let t1 = gesture.location(ofTouch: 0, in: pinchView)
+                let t2 = gesture.location(ofTouch: 1, in: pinchView)
+                if gesture.velocity < 0 {
+                    print ("I'm shrinking!")
+                
+                } else {
+                    print ("I'm growing awful fast.")
+                }
+                
+                print ("pinch selected underway", t1, t2)
             }
         }   else if gesture.state == UIGestureRecognizerState.ended {
             if selected.list.isEmpty {
                 print ("pinch finished - no action")
             } else {
-                print ("pinch selected finished")
+                let t3 = gesture.location(in: pinchView)
+                print ("pinch selected finished", t3)
             }
         }
     }
