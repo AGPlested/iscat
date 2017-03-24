@@ -107,10 +107,6 @@ class SettingsItem: NSObject {
             default:
                 return 0
             }
-        
     }
-    
-    
-    
-    
+
 }

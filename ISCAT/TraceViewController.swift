@@ -9,7 +9,7 @@
 import UIKit
 import SwiftyDropbox
 
-class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewControllerDelegate, SettingsViewControllerDelegate {
+class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewControllerDelegate, SettingsViewControllerDelegate, EventsViewControllerDelegate {
 
     @IBOutlet weak var sv: UIScrollView!
     @IBOutlet weak var zoomButton: UIButton!
@@ -21,6 +21,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
     let v = TraceDisplay() //content view
     let ld = TraceIO()     //file retrieval
     var s = SettingsList()
+    var masterEventList = eventList()
     
     var pointIndex : Int = 0
     
@@ -197,15 +198,35 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         updateLabels()
         
     }
-    @IBAction func Fit(sender: Any) {
-    }
+
     //mark actions
+    
+    func EventsVCDidFinish(controller: EventsViewController, updatedEvents: eventList) {
+        print ("Events returned", updatedEvents)
+        masterEventList = updatedEvents
+        controller.dismiss(animated: true, completion: {})
+    }
     
     func FitVCDidFinish(controller: FittingViewController, touches: Int, fit:eventList) {
         print ("Touches", touches)
         print ("Fit", fit)
-        statusLabel.text = String(format:"Last fit: %@",fit.consolePrintable())
+        
+        //by doing it this way, lose timestamps and event order
+        //need a helper function to append list to list
+        //look at creation time of list to get overall order of old and new events
+        //for example....
+        
+        //reject fit returns an empty list
+        guard fit.count() > 0 else {
+            statusLabel.text = String(format:"No fit or fit rejected. Nothing stored ")
+            controller.dismiss(animated: true, completion: {})
+            return
+        }
+        for event in fit.list {
+            masterEventList.eventAppend(e: event)
+        statusLabel.text = String(format:"Stored fit: %@",fit.consolePrintable())
         controller.dismiss(animated: true, completion: {})
+        }
     }
     
     func SettingsVCDidFinish(controller: SettingsViewController, updatedS: SettingsList) {
@@ -217,6 +238,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "FitViewSegue"
         {
+            print ("FitViewSegue triggered.")
             if let destinationVC = segue.destination as? FittingViewController {
                 destinationVC.progressCounter = self.progress           //progress excludes the header
                 let dataLength = Float(traceLength! - 3000)             // this is not scaled
@@ -234,12 +256,27 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         }
         else if segue.identifier == "SettingsViewSegue"
             {
+            print ("SettingsViewSegue triggered.")
             if let destinationVC = segue.destination as? SettingsViewController {
                 
                 //preparation for segue to settings goes here
                 //local settings object is passed and returned
                 destinationVC.localSettings = s
                 destinationVC.delegate = self
+            }
+        }
+        else if segue.identifier == "EventsViewSegue"
+            //must set this in segue!!!
+            {
+            print ("EventsViewSegue triggered.")
+            if let destinationVC = segue.destination as? EventsViewController {
+                    
+                    //preparation for segue to settings goes here
+                    //reference to event object is passed and returned
+                
+                destinationVC.localEventsList = masterEventList
+                destinationVC.delegate = self
+                
             }
         }
     }

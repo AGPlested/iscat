@@ -15,49 +15,60 @@ enum Entries: String {
     case sojourn, transition, opening, shutting, artifact, skipped, begin, end, misc, mark, comment, unclassified
 }
 
+let chEvents = [
+    Entries.sojourn, Entries.transition, Entries.opening, Entries.shutting, Entries.artifact
+]
+
+let otherEvents = [
+    Entries.begin, Entries.end, Entries.misc, Entries.mark, Entries.comment, Entries.unclassified
+]
+
+
 struct StoredEvent {
+    //var kindOfEvent : Entries
     var timePt: Float = 0
-    var length: Float?
+    var duration: Float?
     var amplitude: Float?
     var localID: Int?
     var registered: String?
 }
 
 class Event {
+    
     var timePt: Float = 0      //event at 0 ms by default
     var order: Int = 0         //default list position is 0
-    var length: Float?         //some types of event have no meaningful duration
-    let kindOfEntry: Entries
-    //local ID in a fit window. might be good to store the CALayer ID here??
+    var duration: Float?         //some types of event have no meaningful duration
+    var amplitude: Double?     //some events don't have any amplitude (WHY DOUBLE?)
+    var colorFitSSD: UIColor?   //if event was fitted, save the color for later
+    var fitSSD : Float?         //save SSD per data point from fit
+    //event metadata
+    var kindOfEntry: Entries
+    var isChannelEvent : Bool  //if false, it's an "other event" :
+    //meaning an event or mark in the idealization that is not biophysical
+    var text: String?
+    var name: String?
+    //local ID of the event in an active fit view.
     var localID: Int?
     //event will be date-stamped when registered to an event list
+    //must be optional, can't be stored now.
     var registered: String?
     
     init(_ kOE : Entries = .unclassified) {
         kindOfEntry = kOE
+        
+        if kindOfEntry == .unclassified {
+            text = "This event was unclassified by default."
+        }
+        
+        if chEvents.contains(kindOfEntry)  {
+            isChannelEvent = true
+        } else {
+            isChannelEvent = false
+        }
+        
     }
     
     func printable () -> String {
-        return "Undefined"
-    }
-}
-
-
-class otherEvent: Event {
-    //events and marks in the idealization that are not biophysical
-    var text: String = ""
-    var name: String?
-    
-    convenience init() {
-        self.init(eKind: .unclassified)
-        text = "This event was unclassified by default."
-    }
-    
-    init (eKind:Entries) {
-        super.init(eKind)
-    }
-    
-    override func printable () -> String {
         switch kindOfEntry {
             
         case .begin:
@@ -65,57 +76,39 @@ class otherEvent: Event {
             
         case .end:
             return String (format:"End of analysis t. %.2f ms.", timePt)
+          
+        //Ion channel events
+        //Structure is only enforced on printable method.
+        //Would it be good to use a protocol to check that events conform?
             
+        //dwell period in unknown/not marked state
+        case .sojourn:
+            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA, SSD %2f", kindOfEntry.rawValue, timePt, duration!, amplitude!, fitSSD!)
+            
+        // open sojourn
+        case .opening:
+            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA, SSD %2f", kindOfEntry.rawValue, timePt, duration!, amplitude!, fitSSD!)
+            
+        //shut sojourn
+        case .shutting:
+            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA, SSD %2f", kindOfEntry.rawValue, timePt, duration!, amplitude!, fitSSD!)
+            
+        case .transition:
+            return String (format:"%@ t. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, amplitude!)
+            
+        case .artifact:
+            return String (format:"%@ t. %.2f ms, l. %.2f ms", kindOfEntry.rawValue, timePt, duration!)
+    
         default:
-            if let unwrappedlen = length {
+            if let unwrappedlen = duration {
                 return String(format:"%@ t. %.2f ms, d. %.2f ms", kindOfEntry.rawValue, timePt, unwrappedlen)
             } else {
-                return String(format:"%@ t. %.2f ms", kindOfEntry.rawValue, timePt, text)
+                return String(format:"%@ t. %.2f ms", kindOfEntry.rawValue, timePt, text!)
             }
         }
     }
 }
 
-class chEvent: Event {
-    //Ion channel events
-    //Structure is only enforced on printable method.
-    //Would it be good to use a protocol to check that events conform?
-    
-    var amplitude: Double = 0     //zero by default (WHY DOUBLE?)
-
-    //no length by default (e.g. transition)
-    
-    init (eKind:Entries) {
-        super.init(eKind)
-        //must initialise with a member of Entries
-    }
-    
-    override func printable () -> String {
-        switch kindOfEntry {
-        
-        //dwell period in unknown/not marked state
-        case .sojourn:
-            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, length!, amplitude)
-        
-        // open sojourn
-        case .opening:
-            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, length!, amplitude)
-        
-        //shut sojourn
-        case .shutting:
-            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, length!, amplitude)
-            
-        case .transition:
-            return String (format:"%@ t. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, amplitude)
-            
-        case .artifact:
-            return String (format:"%@ t. %.2f ms, l. %.2f ms", kindOfEntry.rawValue, timePt, length!)
-            
-        default:
-            return String (format:"%@ , miscast as channel event", kindOfEntry.rawValue)
-        }
-    }
-}
 
 class timeStamp {
     let tdate = Date()
@@ -206,6 +199,29 @@ struct eventList {
             return true
         }
     }
+
+    mutating func removeEventsBySSD (threshold : Float) -> Bool {
+        // Two-pass approach to avoid mutating list during
+        // surveillance loop
+        
+        var markForDeletion = [Int]()
+        if list.isEmpty {
+            return false
+        } else {
+            for i in 0 ..< list.count  {
+                if list[i].fitSSD != nil {
+                    if list[i].fitSSD! > threshold {
+                        markForDeletion.append(i)
+                    }
+                }
+            }
+            for e in markForDeletion {
+                list.remove(at: e)
+            }
+            return true
+        }
+    }
+    
     
     mutating func lastEventAddedRemove () -> Bool  {
         if list.isEmpty {
@@ -281,15 +297,33 @@ struct eventList {
         return printableList
     }
     
+    func tableListing (title: String = "") -> (String, [[String:String]]) {
+        var cell = [String:String]()
+        var cells = [[String:String]]()
+        let formattedTitle = titleGenerator(title: title)
+        for e in list {
+            cell = ["timePt" : String(e.timePt), "duration" : String(describing: e.duration!), "amplitude" : String(describing: e.amplitude!), "kOE" : e.kindOfEntry.rawValue]
+            cells.append(cell)
+        }
+        
+        return (formattedTitle, cells)
+    }
+    
+    func titleGenerator (title: String = "") -> String {
+        var extendedTitle : String
+        if title == "" {
+            extendedTitle = String (format:"%@ list of %i events\n", sortType, list.count)
+        } else {
+            extendedTitle = String (format:"%@ %i events\n", title, list.count)
+        }
+        return extendedTitle
+    }
+    
     func consolePrintable (title: String = "") -> String{
         //compact list presentation for displaying in console boxes
         var printableList : String
         //header
-        if title == "" {
-            printableList = String (format:"%@ list of %i events\n", sortType, list.count)
-        } else {
-            printableList = String (format:"%@ %i events\n", title, list.count)
-        }
+        printableList = titleGenerator(title: title)
         
         if list.isEmpty {
             if title == "Selected" {
@@ -306,6 +340,64 @@ struct eventList {
         return printableList
     }
 }
+
+class eventTableItem: NSObject {
+    // A text description of this item for UITableView.
+    var textLabel: String?
+    
+    // A Boolean value that determines the whether this control is active
+    var active: Bool
+    
+    var amplitude : String?
+    var timePt : String?
+    var duration : String?
+    var kOE : String?
+    var SSD : String?
+    var color : UIColor?
+    //provides strings to display the event values
+    
+    init(e: Event) {
+        active = true
+        timePt = String (e.timePt)
+        kOE = e.kindOfEntry.rawValue
+        
+        //might find nil during forced unwrap?
+        if e.text != nil {
+            textLabel = e.text
+        } else {
+            textLabel = ""
+        }
+    
+        if e.fitSSD != nil {
+            SSD = String (e.fitSSD!)
+        } else {
+            SSD = ""
+        }
+        
+        if e.colorFitSSD != nil {
+            color = e.colorFitSSD
+        } else {
+            color = UIColor.lightGray
+        }
+        
+        
+        if e.amplitude != nil  {
+            amplitude = String (e.amplitude!)
+            //print ("amp set")
+        } else {
+            amplitude = "-"
+        }
+ 
+        if e.duration != nil  {
+            duration = String (e.duration!)
+            //print ("duration set")
+        } else {
+            duration = "-"
+        }
+    }
+}
+
+
 /*
 //these are half-way to being unit tests
 var event0 = otherEvent(eKind: Entries.begin)
