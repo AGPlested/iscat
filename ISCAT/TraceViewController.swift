@@ -250,18 +250,11 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     func FitVCDidFinish(controller: FittingViewController, touches: Int, fit:eventList) {
         print ("Touches", touches)
         print ("Fit", fit)
-        
-        //by doing it this way, lose timestamps and event order
-        //need a helper function to append list to list
-        //look at creation time of list to get overall order of old and new events
-        //for example....
-        
-        //reject fit returns an empty list
-        
+    
         //Work on the table, remove most recent event if it is empty. 
-        //recentFitList is initialized empty
+        //recentFitList is initialized empty, only look for a 'last' list in a non-empty list
         if !recentFitList.isEmpty && recentFitList.last!.list.isEmpty {
-            recentFitList.popLast()
+            recentFitList.popLast()  // discard answer
         }
         recentFitList.append(fit)
         
@@ -271,18 +264,27 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         for eventList in recentFitList.reversed() {
             let recentFitsCellContents = recentEventTableItem(eL: eventList, position: place)
             recentFitsTableRows.append (recentFitsCellContents)
-            place -= 1 //not a beautiful way to do it, but reversed().enumerated() didn't fly
+            place -= 1 //not a beautiful way to do it, but reversed().enumerated() doesn't fly??
         }
         recentFitsTable.reloadData()
+        
+        //reject fit button returns an empty list
         
         guard fit.count() > 0 else {
             statusLabel.text = String(format:"No fit or fit rejected. Nothing stored ")
             controller.dismiss(animated: true, completion: {})
             return
         }
+        
+        //by doing it this way, lose timestamps and event order
+        //need a helper function to append list to list
+        //look at creation time of list to get overall order of old and new events
+        //for example....
+        
         for event in fit.list {
             masterEventList.eventAppend(e: event)
-        // much simplified status report because info is in "Recent fits" table
+            
+        // now provide much simplified status report because info is in "Recent fits" table
         statusLabel.text = String(format:"Stored fit: %@",fit.titleGenerator())
         controller.dismiss(animated: true, completion: {})
         }
