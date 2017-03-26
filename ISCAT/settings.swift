@@ -15,6 +15,7 @@ enum settingValue {
     case textParameter(String)
     case toggle (Bool)
     case group (SettingsGroup)
+    case slider (Float)
 }
 
 //settings for the app as a whole at the moment
@@ -22,18 +23,35 @@ class SettingsList  {
     
     
     //header at the start of Axograph binary (raw) data file is 3000 16-bits
-    var header = SettingsItem(text: "Header", sValue: .integer(3000))
+    var header = SettingsItem(text: "Header",
+                                sValue: .integer(3000))
+    
+    //sample rate
+    var sampleRate = SettingsItem(text: "Sampling Rate",
+                                sValue: .float(20000))
     
     //chunks to break trace data into
-    var basicChunk = SettingsItem(text: "Chunk Size", sValue: .integer(1000))
+    var basicChunk = SettingsItem(text: "Chunk Size",
+                                sValue: .integer(2000))
     
     //working directory
-    var workingPath = SettingsItem(text: "Working Path", sValue: .textParameter("Dropbox"))
+    var workingPath = SettingsItem(text: "Working Path",
+                                sValue: .textParameter("Dropbox"))
     
     //filename to save idealization to
-    var idealizationFilename = SettingsItem(text: "Idealization", sValue: .textParameter("Test.txt"))
+    var idealizationFilename = SettingsItem(text: "Idealization",
+                                sValue: .textParameter("Test.txt"))
+    
+    var dataFilename = SettingsItem(text: "Datafile",
+                                    sValue: .textParameter("sim1600"))
     
     //type of files
+    var rawDataFileType = SettingsItem(text: "Input data file type",
+                                sValue: .textParameter("Axograph Binary"))
+    
+    // control of
+    var panAngleSensitivity = SettingsItem(text: "Pan angle",
+                                sValue: .slider(0.5))
     
 }
 
@@ -45,6 +63,9 @@ class SettingsItem: NSObject {
     // A text description of this item for UITableView.
     var textLabel: String
     
+    var helperText: String?
+    // optional helper text
+    
     // A Boolean value that determines the whether this control is active
     var active: Bool
     
@@ -55,7 +76,7 @@ class SettingsItem: NSObject {
     
     init(text: String, sValue: settingValue) {
         textLabel = text
-
+        
         active = true
         
         switch sValue {
@@ -67,6 +88,8 @@ class SettingsItem: NSObject {
             self.sVal = settingValue.textParameter(val)
         case let .toggle(val):
             self.sVal = settingValue.toggle(val)
+        case let .slider(val):
+            self.sVal = settingValue.slider(val)
         /*case .group:
             self.sVal = settingValue.group() */
         default:
@@ -97,7 +120,7 @@ class SettingsItem: NSObject {
                 return integerValue
             default:
                 return 0
-            }
+        }
     }
     
     func getFloatValue () -> (Double) {
@@ -106,7 +129,18 @@ class SettingsItem: NSObject {
                 return floatValue
             default:
                 return 0
-            }
+        }
     }
+    
+    func getStringValue () -> String {
+        switch sVal {
+            case .textParameter(let textValue) :
+                return textValue
+            default:
+                return ""
+        }
+
+    }
+    
 
 }

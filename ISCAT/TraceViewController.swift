@@ -11,16 +11,21 @@ import SwiftyDropbox
 
 class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewControllerDelegate, SettingsViewControllerDelegate, EventsViewControllerDelegate {
 
+    @IBOutlet weak var eventsFitsStack: UIStackView!
     @IBOutlet weak var sv: UIScrollView!
     @IBOutlet weak var zoomButton: UIButton!
     @IBOutlet weak var zoomLabel: UILabel!
     @IBOutlet weak var progressLabel: UILabel!
     @IBOutlet weak var statusLabel: UILabel!
 
+    @IBOutlet weak var recentFitsView: UIView!
+
+    @IBOutlet weak var quickSettingsView: UIView!
 
     let v = TraceDisplay() //content view
-    let ld = TraceIO()     //file retrieval
     var s = SettingsList()
+    let ld = TraceIO()     //file retrieval
+
     var masterEventList = eventList()
     
     var pointIndex : Int = 0
@@ -68,7 +73,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         
         print (step, chunkN, chunkN * chunk, traceLength!)
         
-        sv.backgroundColor = UIColor.white
+        //sv.backgroundColor = UIColor.darkGray
         sv.translatesAutoresizingMaskIntoConstraints = false
         sv.minimumZoomScale = 0.1
         sv.maximumZoomScale = 10
@@ -78,7 +83,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         }
         
         sv.addSubview(v)        //UIView
-        
+        print ("Drawing trace from \(s.dataFilename.getStringValue())")
         for i in 0..<chunkN {
             
             //chunk label
@@ -94,24 +99,21 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
             tracePath.move(to: firstPoint)
             
             for index in stride(from:0, to: chunk, by: Int(step))  {
-                
                 pointIndex = index + headerSize + tStart + i * chunk
                 
                 //xp is separately scaled by tDrawScale
                 drawnPoint = CGPoint(x: xp + v.tDrawScale * CGFloat(index), y: CGFloat(200) * (1.0 + CGFloat(arr[pointIndex]) / 32536.0))
-                
                 tracePath.addLine(to: drawnPoint)
-                
             }
             
             //grab the last plotted point for next iteration
             firstPoint = drawnPoint
-            print (i, firstPoint)
+            //print (i, firstPoint)
             
             // render to layer
             let traceLayer = CAShapeLayer()
             traceLayer.path = tracePath.cgPath
-            traceLayer.strokeColor = UIColor.black.cgColor
+            traceLayer.strokeColor = UIColor.white.cgColor
             traceLayer.lineJoin = kCALineJoinRound
             traceLayer.fillColor = nil
             traceLayer.lineWidth = thickness
@@ -132,13 +134,18 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         
         
         //Load the trace
-        traceArray = ld.loadData()
+        traceArray = ld.loadData(dataFilename : s.dataFilename.getStringValue())
         //print (trace[0])
         traceView(arr: traceArray)
         sv.bouncesZoom = false
         statusLabel.text = "No fit yet."
         updateLabels()
-        
+        sv.layer.borderColor = UIColor.white.cgColor
+        sv.layer.borderWidth = CGFloat(1.0)
+        recentFitsView.layer.borderColor = UIColor.white.cgColor
+        recentFitsView.layer.borderWidth = CGFloat(1.0)
+        quickSettingsView.layer.borderColor = UIColor.white.cgColor
+        quickSettingsView.layer.borderWidth = CGFloat(1.0)
         // Do any additional setup after loading the view, typically from a nib.
     }
 
@@ -163,7 +170,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
 
         var sz = sv.bounds.size
         sz.width = xp * scale
-        sz.height *= scale //reset size of view
+        sz.height *= scale  //reset size of view
         sv.contentSize = sz
         
         updateLabels()

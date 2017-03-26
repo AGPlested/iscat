@@ -8,12 +8,28 @@
 
 import UIKit
 
-class CustomSettingCell: UITableViewCell {
+//cells for settings table
 
+class CustomSettingCell: UITableViewCell {
     @IBOutlet weak var view: UIView!
     @IBOutlet weak var SettingLabel: UILabel!
     @IBOutlet weak var SettingValue: UILabel!
 }
+
+class ToggleSettingCell: UITableViewCell {
+    @IBOutlet weak var toggleContentView: UIView!
+    @IBOutlet weak var toggleSetting: UISwitch!
+    @IBOutlet weak var toggleLabel: UILabel!
+}
+
+class SliderSettingCell: UITableViewCell {
+    @IBOutlet weak var sliderContentView: UIView!
+    @IBOutlet weak var sliderLabel: UILabel!
+    @IBOutlet weak var settingSlider: UISlider!
+}
+
+
+//cells for event tables
 
 class CustomEventCell: UITableViewCell {
     @IBOutlet weak var basicEventView: UIView!
@@ -22,5 +38,4 @@ class CustomEventCell: UITableViewCell {
     @IBOutlet weak var timePt: UILabel!
     @IBOutlet weak var kindOfEvent: UILabel!
     @IBOutlet weak var SSD: UILabel!
-
 }

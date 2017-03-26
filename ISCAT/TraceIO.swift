@@ -19,17 +19,22 @@ class TraceIO {
     }
     */
     
-    func loadData() -> [Int16] {
-        // select data type
+    var dataFilename: String
+    init () {
+        dataFilename = ""
+    }
+    
+    func loadData(dataFilename: String) -> [Int16] {
+        // select data type?
         
         //*read binary data from disk
         // get path to data
 
         
         let bundle = Bundle.main
-        let dataPath :String = bundle.path(forResource: "sim1600", ofType: "bin")!
+        let dataPath :String = bundle.path(forResource: dataFilename, ofType: "bin")!
         let readData = NSData (contentsOfFile: dataPath)
-        print("Read the data in TraceIO")
+        print("Read the data \(dataFilename) in TraceIO")
         
         let count = readData!.length / MemoryLayout<Int16>.size //assume data format
         

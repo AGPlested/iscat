@@ -251,29 +251,33 @@ class FittingViewController: UIViewController {
         let pinchView = gesture.view
         if gesture.state == UIGestureRecognizerState.began {
             if selected.list.isEmpty  {
-                print ("pinch but nothing selected")
+                print ("Pinch detected but nothing selected.")
             } else {
+                let t0 = gesture.location(in: pinchView)
+                let t1_start = gesture.location(ofTouch: 0, in: pinchView)
+                let t2_start = gesture.location(ofTouch: 1, in: pinchView)
                 //position is the average of the two touches
                 //should probably store the initial positions and alter on difference
                 //also store selected stats for live modifcation 
                 //as in drag
-                let t0 = gesture.location(in: pinchView)
                 print ("pinch selected began", t0)
             }
         } else if gesture.state == UIGestureRecognizerState.changed {
             if selected.list.isEmpty {
                 print ("nothing selected to pinch")
             } else {
-                let t1 = gesture.location(ofTouch: 0, in: pinchView)
-                let t2 = gesture.location(ofTouch: 1, in: pinchView)
+                let t1_current = gesture.location(ofTouch: 0, in: pinchView)
+                let t2_current = gesture.location(ofTouch: 1, in: pinchView)
                 if gesture.velocity < 0 {
                     print ("I'm shrinking!")
+                    //if event gets so small that it is gone, throw a popup event that asks 
+                    //discard event or reset to original?
                 
                 } else {
                     print ("I'm growing awful fast.")
                 }
                 
-                print ("pinch selected underway", t1, t2)
+                print ("pinch selected underway", t1_current, t2_current)
             }
         }   else if gesture.state == UIGestureRecognizerState.ended {
             if selected.list.isEmpty {
@@ -281,6 +285,9 @@ class FittingViewController: UIViewController {
             } else {
                 let t3 = gesture.location(in: pinchView)
                 print ("pinch selected finished", t3)
+                
+                //if SSD got worse, ask 
+                //SSD got worse, discard changes and reset or keep new event
             }
         }
     }
