@@ -9,7 +9,7 @@
 import UIKit
 import SwiftyDropbox
 
-class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewControllerDelegate, SettingsViewControllerDelegate, EventsViewControllerDelegate {
+class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDataSource, UITableViewDelegate, FitViewControllerDelegate, SettingsViewControllerDelegate, EventsViewControllerDelegate {
 
     @IBOutlet weak var eventsFitsStack: UIStackView!
     @IBOutlet weak var sv: UIScrollView!
@@ -18,8 +18,11 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
     @IBOutlet weak var progressLabel: UILabel!
     @IBOutlet weak var statusLabel: UILabel!
 
+    @IBOutlet weak var recentFitsTable: UITableView!
+    
     @IBOutlet weak var recentFitsView: UIView!
-
+    var recentFitsTableRows = [recentEventTableItem]()
+    
     @IBOutlet weak var quickSettingsView: UIView!
 
     let v = TraceDisplay() //content view
@@ -28,9 +31,10 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
 
     var masterEventList = eventList()
     
+    //for recent fits info panel
+    var recentFitList = [eventList]()
+    
     var pointIndex : Int = 0
-    
-    
     var traceLength : Int?
     var traceArray = [Int16]() //  this array will hold the trace data
     
@@ -43,7 +47,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
     var viewSize = CGRect()
     
     var originalZoom = CGFloat(1)
-    
+    let eventCellReuseID = "recentFitCell"
     
     func updateLabels () {
         zoomLabel.text = String(format:"%.1f", sv.zoomScale)
@@ -146,6 +150,14 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         recentFitsView.layer.borderWidth = CGFloat(1.0)
         quickSettingsView.layer.borderColor = UIColor.white.cgColor
         quickSettingsView.layer.borderWidth = CGFloat(1.0)
+        
+        recentFitsTable.dataSource = self
+        recentFitsTable.delegate = self
+        
+        //recent fits table is first supplied with a dummy, in order to print no fit yet (-1).
+        let recentFitsCellContents = recentEventTableItem(eL: eventList(), position: -1)
+        recentFitsTableRows.append (recentFitsCellContents)
+
         // Do any additional setup after loading the view, typically from a nib.
     }
 
@@ -155,6 +167,27 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         // Dispose of any resources that can be recreated.
     }
 
+    // MARK: - Table view data source
+    
+    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+        return 1
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return recentFitsTableRows.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let rCell: RecentFitCell = tableView.dequeueReusableCell(withIdentifier: eventCellReuseID, for: indexPath) as! RecentFitCell
+        
+        let item = recentFitsTableRows[indexPath.row]
+        rCell.orderLabel.text =  item.rank
+        rCell.infoLabel.text =  item.info
+        rCell.eventsLabel.text =  item.events
+        return rCell
+    }
+
+    
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return v
         
@@ -224,6 +257,24 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         //for example....
         
         //reject fit returns an empty list
+        
+        //Work on the table, remove most recent event if it is empty. 
+        //recentFitList is initialized empty
+        if !recentFitList.isEmpty && recentFitList.last!.list.isEmpty {
+            recentFitList.popLast()
+        }
+        recentFitList.append(fit)
+        
+        //wash out the recent fits table data source and repopulate, latest first...
+        recentFitsTableRows = []
+        var place = recentFitList.count
+        for eventList in recentFitList.reversed() {
+            let recentFitsCellContents = recentEventTableItem(eL: eventList, position: place)
+            recentFitsTableRows.append (recentFitsCellContents)
+            place -= 1 //not a beautiful way to do it, but reversed().enumerated() didn't fly
+        }
+        recentFitsTable.reloadData()
+        
         guard fit.count() > 0 else {
             statusLabel.text = String(format:"No fit or fit rejected. Nothing stored ")
             controller.dismiss(animated: true, completion: {})
@@ -231,7 +282,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         }
         for event in fit.list {
             masterEventList.eventAppend(e: event)
-        statusLabel.text = String(format:"Stored fit: %@",fit.consolePrintable())
+        // much simplified status report because info is in "Recent fits" table
+        statusLabel.text = String(format:"Stored fit: %@",fit.titleGenerator())
         controller.dismiss(animated: true, completion: {})
         }
     }
@@ -247,8 +299,10 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
         {
             print ("FitViewSegue triggered.")
             if let destinationVC = segue.destination as? FittingViewController {
-                destinationVC.progressCounter = self.progress           //progress excludes the header
-                let dataLength = Float(traceLength! - 3000)             // this is not scaled
+                destinationVC.progressCounter = self.progress
+                //progress excludes the header
+                let dataLength = Float(traceLength!) - Float(s.header.getIntValue())
+                // this is not scaled
                 let leftPoint = s.header.getIntValue() + Int(self.progress / 100 * dataLength)
                 let rightPoint = leftPoint + Int(dataLength * Float(sv.bounds.width / sv.contentSize.width))
                 print (leftPoint, rightPoint, rightPoint-leftPoint, traceArray.count, sv.bounds.width, sv.contentSize.width) //these points are all wrong compared to whats on the screen but getting there. tooMUCH!
@@ -267,7 +321,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
             if let destinationVC = segue.destination as? SettingsViewController {
                 
                 //preparation for segue to settings goes here
-                //local settings object is passed and returned
+                //reference to settings object is passed and returned
                 destinationVC.localSettings = s
                 destinationVC.delegate = self
             }
@@ -278,9 +332,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, FitViewContro
             print ("EventsViewSegue triggered.")
             if let destinationVC = segue.destination as? EventsViewController {
                     
-                    //preparation for segue to settings goes here
-                    //reference to event object is passed and returned
-                
+                //preparation for segue to settings goes here
+                //reference to event object is passed and returned
                 destinationVC.localEventsList = masterEventList
                 destinationVC.delegate = self
                 

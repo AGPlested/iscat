@@ -81,18 +81,19 @@ class Event {
         //Structure is only enforced on printable method.
         //Would it be good to use a protocol to check that events conform?
             
-        //dwell period in unknown/not marked state
-        case .sojourn:
-            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA, SSD %2f", kindOfEntry.rawValue, timePt, duration!, amplitude!, fitSSD!)
-            
+        //dwell period in unknown/not marked state, opening or shutting
+        case .sojourn, .opening, .shutting:
+            return String (format:"%@ t. %.1f ms, d. %.1f ms, a. %.1f pA, SSD %.0f", kindOfEntry.rawValue, timePt, duration!, amplitude!, fitSSD!)
+        /*
+        //now taken care of above; simpler
         // open sojourn
         case .opening:
-            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA, SSD %2f", kindOfEntry.rawValue, timePt, duration!, amplitude!, fitSSD!)
+            return String (format:"%@ t. %.1f ms, d. %.2f ms, a. %.2f pA, SSD %0f", kindOfEntry.rawValue, timePt, duration!, amplitude!, fitSSD!)
             
         //shut sojourn
         case .shutting:
-            return String (format:"%@ t. %.2f ms, d. %.2f ms, a. %.2f pA, SSD %2f", kindOfEntry.rawValue, timePt, duration!, amplitude!, fitSSD!)
-            
+            return String (format:"%@ t. %.1f ms, d. %.1f ms, a. %.1f pA, SSD %0f", kindOfEntry.rawValue, timePt, duration!, amplitude!, fitSSD!)
+        */
         case .transition:
             return String (format:"%@ t. %.2f ms, a. %.2f pA", kindOfEntry.rawValue, timePt, amplitude!)
             
@@ -245,7 +246,7 @@ struct eventList {
     mutating func sortByTimeStampReverse () {
         //  timestamp is zero by default
         list.sort(by: { (first: Event, second: Event) -> Bool in first.timePt > second.timePt})
-        sortType = "Reversr chronologically sorted"
+        sortType = "Reverse chronologically sorted"
     }
     mutating func sortByAdded () {
         //  timestamp is zero by default
@@ -323,23 +324,59 @@ struct eventList {
         //compact list presentation for displaying in console boxes
         var printableList : String
         //header
-        printableList = titleGenerator(title: title)
         
+        //jog on
         if list.isEmpty {
             if title == "Selected" {
-                printableList = "Nothing selected"
+                return "Nothing selected"
             } else {
-                printableList = "No events"     //overwrite header
-            }
-        } else {
-            for e in list {
-                printableList += (String(format:"%i %@\n", e.order, e.printable()))
-                //skip timestamp (look at the clock!)
+                return "No events"
             }
         }
+        
+        if list.count == 1 {
+            printableList = "1 event\n" //singleton can't have any kind of sorting!!!
+        }   else {
+            printableList = titleGenerator(title: title)
+        }
+            
+        for e in list {
+            printableList += (String(format:"%i %@\n", e.order, e.printable()))
+            //skip timestamp (look at the clock!)
+        }
+            
         return printableList
     }
 }
+
+class recentEventTableItem: NSObject {
+    // A text description of this recent fit for UITableView.
+    
+    var info : String?
+    var rank : String?
+    var events : String?
+
+    //provides strings to display the recent fit values
+    
+    init(eL: eventList, position: Int) {
+        //when table is first shown, there have been no fits (signalled with -1)
+        if position == -1 {
+            rank = "  No fit yet"
+            info = ""
+            events = ""
+        } else {
+            rank = String (position)
+            info = eL.creationStamp
+            if eL.list.isEmpty  {
+                events = "No events fitted"
+            } else {
+                events = eL.consolePrintable()
+            }
+        }
+    }
+}
+
+
 
 class eventTableItem: NSObject {
     // A text description of this item for UITableView.

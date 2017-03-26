@@ -17,20 +17,19 @@ class GaussianFit {
     var kernel = [Float]()                  //the filter kernel
     
     init(filter: Float) {
-        //filter is the filter corner frequency expressed as a fraction of the sample frequency (see Blue Book).
+        //filter is the filter corner frequency expressed 
+        //as a fraction of the sample frequency (see Blue Book).
         kernel = dcGaussian(fc: filter)
     }
 
-    func conv(x: [Float], k: [Float]) -> [Float] {
+    func filterConvolution(x: [Float], k: [Float]) -> [Float] {
+        //nice fast convolution using Accelerate
         let resultSize = x.count + k.count - 1
         var result = [Float](repeating: 0, count: resultSize)
         let kEnd = UnsafePointer<Float>(k).advanced(by: k.count - 1)
         let xPad: [Float] = [Float](repeating: 0.0, count: k.count-1)
         let xPadded = xPad + x + xPad
         vDSP_conv(xPadded, 1, kEnd, -1, &result, 1, vDSP_Length(resultSize), vDSP_Length(k.count))
-        
-        // result is bigger than input and I would prefer to slice out the input part...
-        // not sure that it's any problem
         return result
     }
     
@@ -84,15 +83,17 @@ class GaussianFit {
         let iWidth = Int(gWidth)        //in data points
         let topHatInput = topHat(width: iWidth, height: amp)
         
-        filteredTopHat = conv(x: topHatInput, k: kernel)
+        filteredTopHat = filterConvolution(x: topHatInput, k: kernel)
         
-        let fringe =  Float(filteredTopHat.count - iWidth) * screenPPDP / 2    //need to move drawn curve left by this much.
+        let fringe =  Float(filteredTopHat.count - iWidth) * screenPPDP / 2
+        //need to move drawn curve left in x by this much.
         let xc = filteredTopHat.count
         let xf = Array(0...xc)
         let xfs = xf.map {x in Float(x) * screenPPDP}
         let gaussPath = UIBezierPath()
 
-        let firstPoint = CGPoint (x: CGFloat(leftExtreme - fringe), y: CGFloat(base)) //draw left to right
+        let firstPoint = CGPoint (x: CGFloat(leftExtreme - fringe), y: CGFloat(base))
+        //draw left to right
         gaussPath.move(to: firstPoint)
         
         drawnPath = []
@@ -102,7 +103,7 @@ class GaussianFit {
             drawnPath.append(gaussPoint)
         }
         
-        print ("drawnPath", drawnPath)
+        //print ("drawnPath", drawnPath)
         return gaussPath.cgPath
     }
     
@@ -111,7 +112,7 @@ class GaussianFit {
         let gLayer = CustomLayer()
         gLayer.path = gPath
         gLayer.drawnPathPoints = drawnPath
-        //rearrange to perform these actions more consistently
+        //rearrange to perform these actions more consistently?
         //print ("glayer", gLayer.drawnPathPoints)
         gLayer.strokeColor = UIColor.red.cgColor //color later based on LSQ
         gLayer.fillColor = nil

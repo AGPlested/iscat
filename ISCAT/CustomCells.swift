@@ -30,6 +30,15 @@ class SliderSettingCell: UITableViewCell {
 
 
 //cells for event tables
+//these cells are on the main screen 
+
+class RecentFitCell: UITableViewCell {
+    @IBOutlet weak var recentFitCellView: UIView!
+    @IBOutlet weak var eventsLabel: UILabel!
+    @IBOutlet weak var infoLabel: UILabel!
+    @IBOutlet weak var orderLabel: UILabel!
+}
+
 
 class CustomEventCell: UITableViewCell {
     @IBOutlet weak var basicEventView: UIView!
