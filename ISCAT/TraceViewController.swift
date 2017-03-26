@@ -98,7 +98,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             v.addSubview(lab)
             
             //drawing trace
-            let thickness: CGFloat = 2.0
+            let thickness: CGFloat = 1.5
             let tracePath = UIBezierPath()
             tracePath.move(to: firstPoint)
             
@@ -117,7 +117,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             // render to layer
             let traceLayer = CAShapeLayer()
             traceLayer.path = tracePath.cgPath
-            traceLayer.strokeColor = UIColor.white.cgColor
+            //pinkish orange trace
+            traceLayer.strokeColor = UIColor(red: 0.946, green: 0.9, blue: 0.548, alpha: 1.0).cgColor
             traceLayer.lineJoin = kCALineJoinRound
             traceLayer.fillColor = nil
             traceLayer.lineWidth = thickness
@@ -250,23 +251,37 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     func FitVCDidFinish(controller: FittingViewController, touches: Int, fit:eventList) {
         print ("Touches", touches)
         print ("Fit", fit)
-    
-        //Work on the table, remove most recent event if it is empty. 
-        //recentFitList is initialized empty, only look for a 'last' list in a non-empty list
-        if !recentFitList.isEmpty && recentFitList.last!.list.isEmpty {
-            recentFitList.popLast()  // discard answer
-        }
-        recentFitList.append(fit)
         
-        //wash out the recent fits table data source and repopulate, latest first...
-        recentFitsTableRows = []
-        var place = recentFitList.count
-        for eventList in recentFitList.reversed() {
-            let recentFitsCellContents = recentEventTableItem(eL: eventList, position: place)
-            recentFitsTableRows.append (recentFitsCellContents)
-            place -= 1 //not a beautiful way to do it, but reversed().enumerated() doesn't fly??
+        /*not needed because we start with an empty recent fits list and never add empty fits
+         
+         let fitIsNotEmpty = !fit.list.isEmpty
+        //Work on the table, remove most recent event if it is empty.
+        , only look for a 'last' list in a non-empty list
+        if fitIsNotEmpty && recentFitList.last!.list.isEmpty {
+            recentFitList.popLast()  // discard result of this call
         }
-        recentFitsTable.reloadData()
+        */
+        
+        //recentFitList is initialized empty
+        //skip updating after empty or rejected fits
+        if !fit.list.isEmpty {
+            recentFitList.append(fit)
+        
+            //wash out the recent fits table data source and repopulate, latest first...
+            //need to do append and re-iterate in this crude way rather than simple insert
+            //because place should update for table
+            
+            recentFitsTableRows = []
+            var place = recentFitList.count
+            for eventList in recentFitList.reversed() {
+                let recentFitsCellContents = recentEventTableItem(eL: eventList, position: place)
+                recentFitsTableRows.append (recentFitsCellContents)
+                place -= 1
+                //not a beautiful way to do it, but reversed().enumerated() doesn't fly??
+            }
+            recentFitsTable.reloadData()
+        }
+        
         
         //reject fit button returns an empty list
         
