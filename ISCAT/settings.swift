@@ -22,9 +22,9 @@ enum settingValue {
 class SettingsList  {
     
     
-    //header at the start of Axograph binary (raw) data file is 3000 16-bits
+    //header at the start of Axograph binary (raw) data file is 3k 16-bit words?
     var header = SettingsItem(text: "Header",
-                                sValue: .integer(3000))
+                                sValue: .integer(3072))
     
     //sample rate
     var sampleRate = SettingsItem(text: "Sampling Rate",

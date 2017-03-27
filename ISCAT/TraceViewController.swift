@@ -18,6 +18,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     @IBOutlet weak var progressLabel: UILabel!
     @IBOutlet weak var statusLabel: UILabel!
 
+    @IBOutlet weak var filenameRawLabel: UILabel!
     @IBOutlet weak var recentFitsTable: UITableView!
     
     @IBOutlet weak var recentFitsView: UIView!
@@ -145,13 +146,15 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         sv.bouncesZoom = false
         statusLabel.text = "No fit yet."
         updateLabels()
+        
+        /*
         sv.layer.borderColor = UIColor.white.cgColor
         sv.layer.borderWidth = CGFloat(1.0)
         recentFitsView.layer.borderColor = UIColor.white.cgColor
         recentFitsView.layer.borderWidth = CGFloat(1.0)
         quickSettingsView.layer.borderColor = UIColor.white.cgColor
         quickSettingsView.layer.borderWidth = CGFloat(1.0)
-        
+        */
         recentFitsTable.dataSource = self
         recentFitsTable.delegate = self
         
