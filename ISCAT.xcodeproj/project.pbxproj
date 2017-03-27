@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		49032BBB1E892381001FE271 /* Scale.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49032BBA1E892381001FE271 /* Scale.swift */; };
 		490353021E71AF9C00C7333D /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 490353011E71AF9C00C7333D /* SettingsViewController.swift */; };
 		491A7CDF1D4CE2030017D238 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491A7CDE1D4CE2030017D238 /* AppDelegate.swift */; };
 		491A7CE11D4CE2030017D238 /* TraceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491A7CE01D4CE2030017D238 /* TraceViewController.swift */; };
@@ -39,6 +40,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		49032BBA1E892381001FE271 /* Scale.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Scale.swift; sourceTree = "<group>"; };
 		490353011E71AF9C00C7333D /* SettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		491A7CDB1D4CE2030017D238 /* ISCAT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ISCAT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		491A7CDE1D4CE2030017D238 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 				49529B1A1DBA2BA2006CF048 /* TraceDisplay.swift */,
 				498E2F311E729E2E00BBB0D8 /* settings.swift */,
 				491E127C1E6DA289004A1EE2 /* Event.swift */,
+				49032BBA1E892381001FE271 /* Scale.swift */,
 				491A7CE01D4CE2030017D238 /* TraceViewController.swift */,
 				490353011E71AF9C00C7333D /* SettingsViewController.swift */,
 				4973B5FD1E83BD02001E8EC2 /* EventsViewController.swift */,
@@ -275,6 +278,7 @@
 				49529B1B1DBA2BA2006CF048 /* TraceDisplay.swift in Sources */,
 				491A7CE11D4CE2030017D238 /* TraceViewController.swift in Sources */,
 				4973B5FE1E83BD02001E8EC2 /* EventsViewController.swift in Sources */,
+				49032BBB1E892381001FE271 /* Scale.swift in Sources */,
 				491A7CDF1D4CE2030017D238 /* AppDelegate.swift in Sources */,
 				492304F71E796E4800C2A439 /* CustomCells.swift in Sources */,
 				498E2F321E729E2E00BBB0D8 /* settings.swift in Sources */,

@@ -18,7 +18,9 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     @IBOutlet weak var progressLabel: UILabel!
     @IBOutlet weak var statusLabel: UILabel!
 
-    @IBOutlet weak var filenameRawLabel: UILabel!
+
+    @IBOutlet weak var rawDataFilenameLabel: UILabel!
+    @IBOutlet weak var dataFileHelper: UILabel!
     @IBOutlet weak var recentFitsTable: UITableView!
     
     @IBOutlet weak var recentFitsView: UIView!
@@ -57,6 +59,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             progress = 0
         }
         progressLabel.text = String(format:"%.1f%%", progress)
+        rawDataFilenameLabel.text = String(s.dataFilename.getStringValue())
+        dataFileHelper.text = String(s.rawDataFileType.getStringValue())
         
     }
 
@@ -93,10 +97,27 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             
             //chunk label
             let lab = UILabel()
-            lab.text = "C\(i+1)"
+            lab.text = "\(i * 10)"      //each chunk should be 10 ms
+            lab.textColor = UIColor.lightGray
+            
             lab.sizeToFit()
-            lab.frame.origin = CGPoint(x:xp, y:100)
+            lab.frame.origin = CGPoint(x:xp+10, y:100)  //offset
+            
+            //let scaleView = UIView()
+            let scaleLayer = CAShapeLayer()
+            
+            scaleLayer.strokeColor = UIColor(red: 0.946, green: 0.9, blue: 0.548, alpha: 1.0).cgColor
+            scaleLayer.lineJoin = kCALineJoinRound
+            scaleLayer.fillColor = nil
+            scaleLayer.lineWidth = 0.5
+            scaleLayer.frame.origin = CGPoint(x:xp, y:100)
+            let scalePath = UIBezierPath()
+            scalePath.move(to: CGPoint(x:0, y:0))
+            scalePath.addLine(to: CGPoint(x:0, y:50))
+            scaleLayer.path = scalePath.cgPath
+            
             v.addSubview(lab)
+            v.layer.addSublayer(scaleLayer)
             
             //drawing trace
             let thickness: CGFloat = 1.5

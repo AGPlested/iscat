@@ -32,7 +32,7 @@ class SettingsList  {
     
     //chunks to break trace data into
     var basicChunk = SettingsItem(text: "Chunk Size",
-                                sValue: .integer(2000))
+                                sValue: .integer(200))
     
     //working directory
     var workingPath = SettingsItem(text: "Working Path",
