@@ -49,6 +49,9 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     var offset = CGPoint() //view offset
     var viewSize = CGRect()
     
+    //store the text labels so that their size can be adjusted with zoom
+    var labelsOnXAxis = [UILabel]()
+    
     var originalZoom = CGFloat(1)
     let eventCellReuseID = "recentFitCell"
     
@@ -97,24 +100,23 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             
             //chunk label
             let lab = UILabel()
+            labelsOnXAxis.append(lab)
             lab.text = "\(i * 10)"      //each chunk should be 10 ms
             lab.textColor = UIColor.lightGray
-            
+            lab.font = lab.font.withSize(14.0 / sv.zoomScale)
             lab.sizeToFit()
-            lab.frame.origin = CGPoint(x:xp+10, y:100)  //offset
+            lab.frame.origin = CGPoint(x:xp+5, y:105)  //offset
             
-            //let scaleView = UIView()
-            let scaleLayer = CAShapeLayer()
+            //x scale bar
+            let scale = xRuler()
+            let scaleLayer = scale.axisLayer(widthInScreenPoints: CGFloat(chunk) * v.tDrawScale, minorT: 5)
+            scaleLayer.frame.origin = CGPoint(x:xp, y:100)
             
             scaleLayer.strokeColor = UIColor(red: 0.946, green: 0.9, blue: 0.548, alpha: 1.0).cgColor
             scaleLayer.lineJoin = kCALineJoinRound
             scaleLayer.fillColor = nil
             scaleLayer.lineWidth = 0.5
-            scaleLayer.frame.origin = CGPoint(x:xp, y:100)
-            let scalePath = UIBezierPath()
-            scalePath.move(to: CGPoint(x:0, y:0))
-            scalePath.addLine(to: CGPoint(x:0, y:50))
-            scaleLayer.path = scalePath.cgPath
+
             
             v.addSubview(lab)
             v.layer.addSublayer(scaleLayer)
@@ -165,7 +167,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         //print (trace[0])
         traceView(arr: traceArray)
         sv.bouncesZoom = false
-        statusLabel.text = "No fit yet."
+        statusLabel.text = "No fit yet"
         updateLabels()
         
         /*
@@ -230,6 +232,13 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         sz.width = xp * scale
         sz.height *= scale  //reset size of view
         sv.contentSize = sz
+        
+        //modulate axis ticklabels by zoomScale when view gets tiny
+        for axisLabel in labelsOnXAxis {
+            let tickFontSize = max ((14.0 / sv.zoomScale), 14.0)
+            axisLabel.font = axisLabel.font.withSize(tickFontSize)
+            axisLabel.sizeToFit() //no clipping please
+        }
         
         updateLabels()
         

@@ -27,7 +27,7 @@ class xRuler {
             for i in 1...minorTicks! {
                 let tickPointInX = CGFloat(i) * tickInterval
                 axisPath.move(to: CGPoint(x: tickPointInX, y: 0))
-                axisPath.addLine(to: CGPoint(x: tickPointInX, y: 10))
+                axisPath.addLine(to: CGPoint(x: tickPointInX, y: 5))
             }
         }
         
