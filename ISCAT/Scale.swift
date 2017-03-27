@@ -43,3 +43,39 @@ class xRuler {
         return axisLayer
     }
 }
+
+class yRuler {
+    //draws the ticks and y axis for a trace view
+    var blockHeight: CGFloat? = nil
+    var minorTicks: Int? = nil
+    let axisPath = UIBezierPath()
+    let axisLayer = CAShapeLayer()
+    
+    func axisLayer (heightInScreenPoints: CGFloat, minorT: Int? = nil) -> CAShapeLayer {
+        
+        blockHeight = heightInScreenPoints
+        
+        //minor tick
+        if minorT != nil {
+            minorTicks = minorT
+            let tickInterval = blockHeight! / CGFloat(minorTicks! + 1)
+            
+            for i in 1...minorTicks! {
+                let tickPointInY = CGFloat(i) * tickInterval
+                axisPath.move(to: CGPoint(x: 0, y: tickPointInY))
+                axisPath.addLine(to: CGPoint(x:5, y: tickPointInY))
+            }
+        }
+        
+        //axis
+        axisPath.move(to: CGPoint(x:0, y:0))
+        axisPath.addLine(to: CGPoint(x:0, y:blockHeight!))
+        
+        //major tick
+        axisPath.move(to: CGPoint(x:0, y:0))
+        axisPath.addLine(to: CGPoint(x:20, y:0))
+        
+        axisLayer.path = axisPath.cgPath
+        return axisLayer
+    }
+}

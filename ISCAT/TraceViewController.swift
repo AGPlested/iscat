@@ -21,8 +21,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
 
     @IBOutlet weak var rawDataFilenameLabel: UILabel!
     @IBOutlet weak var dataFileHelper: UILabel!
-    @IBOutlet weak var recentFitsTable: UITableView!
     
+    @IBOutlet weak var recentFitsTable: UITableView!
     @IBOutlet weak var recentFitsView: UIView!
     var recentFitsTableRows = [recentEventTableItem]()
     
@@ -40,6 +40,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     var pointIndex : Int = 0
     var traceLength : Int?
     var traceArray = [Int16]() //  this array will hold the trace data
+    
     
     let tStart = 0
     var xp : CGFloat = 0    //the xposn of the trace
@@ -74,7 +75,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         var firstPoint = CGPoint(x:xp, y:200)
         var drawnPoint = CGPoint(x:xp, y:200)
         
-        let bChunk = s.basicChunk.getIntValue()
+        //chunks of 10 ms
+        let bChunk = Int (s.sampleRate.getFloatValue() / 100)
         
         let headerSize = s.header.getIntValue()
         
@@ -100,7 +102,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             
             //chunk label
             let lab = UILabel()
-            labelsOnXAxis.append(lab)
+            labelsOnXAxis.append(lab)   //store references for easy adjustment later
             lab.text = "\(i * 10)"      //each chunk should be 10 ms
             lab.textColor = UIColor.lightGray
             lab.font = lab.font.withSize(14.0 / sv.zoomScale)
@@ -112,7 +114,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             let scaleLayer = scale.axisLayer(widthInScreenPoints: CGFloat(chunk) * v.tDrawScale, minorT: 5)
             scaleLayer.frame.origin = CGPoint(x:xp, y:100)
             
-            scaleLayer.strokeColor = UIColor(red: 0.946, green: 0.9, blue: 0.548, alpha: 1.0).cgColor
+            scaleLayer.strokeColor = UIColor.lightGray.cgColor
             scaleLayer.lineJoin = kCALineJoinRound
             scaleLayer.fillColor = nil
             scaleLayer.lineWidth = 0.5

@@ -30,9 +30,9 @@ class SettingsList  {
     var sampleRate = SettingsItem(text: "Sampling Rate",
                                 sValue: .float(20000))
     
-    //chunks to break trace data into
-    var basicChunk = SettingsItem(text: "Chunk Size",
-                                sValue: .integer(200))
+    //amplifier gain
+    var gain = SettingsItem(text: "Gain (α)",
+                                  sValue: .float(100))
     
     //working directory
     var workingPath = SettingsItem(text: "Working Path",
