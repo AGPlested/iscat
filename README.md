@@ -1,9 +1,9 @@
-# iscat
-Interactive single channel idealisation in Swift
+# scate
+single channel analysis (touch enabled)
 
-Swift 3 compliant.
+Swift 3.1 compliant.
 
-Load project into XCode. Build for iPad 9.7in I(Pro or Air).
+Load project into XCode. Build for iPad 9.7in (Pro or Air).
 
 Implementation road map:
 
