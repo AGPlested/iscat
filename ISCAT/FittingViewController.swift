@@ -412,14 +412,18 @@ class FittingViewController: UIViewController {
                                 
                                 cLayer.drawnPathPoints = updatedFitPoints   //the current points for the next round of SSD
                                 
-                                var tempOutlinePath = UIBezierPath()               //based on the original points
-                                tempOutlinePath.move(to: selectedFitPoints[cLayer.localID!]![0])
-                                for i in 1 ..< selectedFitPoints[cLayer.localID!]!.count {
-                                    tempOutlinePath.addLine(to: selectedFitPoints[cLayer.localID!]![i])
+                                print (cLayer, updatedFitPoints[0], updatedFitPoints.last)
+                                
+                                var tempOutlinePath = UIBezierPath()               //use the current points
+                                tempOutlinePath.move(to: updatedFitPoints[0])
+                                for i in 1 ..< updatedFitPoints.count {
+                                    tempOutlinePath.addLine(to: updatedFitPoints[i])
                                     }
-                                    
-                                var affineT = CATransform3DGetAffineTransform(newTransform)
-                                cLayer.outlinePath = tempOutlinePath.cgPath.mutableCopy(using: &affineT)!
+
+                                cLayer.outlinePath = tempOutlinePath.cgPath.copy(strokingWithWidth: 50,
+                                                                                     lineCap: CGLineCap(rawValue: 0)!,
+                                                                                     lineJoin: CGLineJoin(rawValue: 0)!,
+                                                                                     miterLimit: 1) as! CGMutablePath
                                 
                                     
                                 //update with current transform from timePt at the start of the drag.
@@ -536,7 +540,7 @@ class FittingViewController: UIViewController {
             
             let xc = fitLineArray.count
             let xf = Array(0...xc)
-            let xfs = xf.map {x in Float(x) * screenPointsPerDataPoint!}
+            let xfs = xf.map {x in Float(x) * screenPointsPerDataPoint! + Float(min((locationOfBeganTap?.x)!, (currentLocationOfTap?.x)!))}
             
             var drawnPath = [CGPoint]()
             for (xp, yp) in zip (xfs,fitLineArray) {

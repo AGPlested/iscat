@@ -20,6 +20,8 @@ func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints
     
     //check for edge here -protect against illegal indices
     if leftIndex < 0 {leftIndex = 0}
+    if rightIndex < 0 {rightIndex = 0}
+    
     if leftIndex > viewPoints.count {
         leftIndex = viewPoints.count
         rightIndex = viewPoints.count
