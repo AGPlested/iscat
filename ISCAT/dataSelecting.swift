@@ -9,14 +9,17 @@
 import UIKit
 
 func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
-    let leftTapIndex = min (Float(firstTouch.x), Float(currentTouch.x))
-    let rightTapIndex = max (Float(firstTouch.x), Float(currentTouch.x))
+    let leftTap = min (Float(firstTouch.x), Float(currentTouch.x))
+    let rightTap = max (Float(firstTouch.x), Float(currentTouch.x))
     
     //normalizing by view width (viewW) removes the need to scale
     //indices are extended by the half-width of the Gaussian filtering kernel.
+    //Zero if it's just a line.
     
-    var leftIndex   = Int(Float(viewPoints.count) * leftTapIndex / viewW ) - kernelHalfWidth
-    var rightIndex   = Int(Float(viewPoints.count) * rightTapIndex / viewW ) + kernelHalfWidth
+    let dataPointsPerScreenPoint = Float(viewPoints.count) / viewW
+    
+    var leftIndex   = Int(Float(leftTap) * dataPointsPerScreenPoint) - kernelHalfWidth
+    var rightIndex   = Int(Float(rightTap) * dataPointsPerScreenPoint) + kernelHalfWidth
     
     //check for edge here -protect against illegal indices
     if leftIndex < 0 {leftIndex = 0}
@@ -46,8 +49,13 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     let originalLeftIndex = Int(startTime * pPSP)       //no proper conversion here yet - stored values are in screen points.
     ///why is this getting crazy? still falling out sometimes and failing to update - giving negative indices
     let originalRightIndex = Int((startTime + e.duration!) * pPSP)      //no proper conversion here yet - stored values are in screen points.
-    let brim = Int(e.duration! * pPSP / 5)        //brim of the top hat function is 1/5 of its hat width.
     
+    var brim = 0                                   //for the case of a line layer being dragged.
+    
+    //if we have a filtered event, need to add the auto-generated brim.
+    if kernelHalfWidth != 0 {
+        brim = Int(e.duration! * pPSP / 5)        //brim of the top hat function is 1/5 of its hat width. should really call back to original function to check this.
+    }
 
     let shiftInDataPoints = Int((currentDragX - startDragX) * pPSP ) //will be +ve if drag is to the right, screen points scaled to data points
     print ("sIDP, pPSP, brim, kHW, OLI, ORI", shiftInDataPoints, pPSP , brim, kernelHalfWidth, originalLeftIndex, originalRightIndex)

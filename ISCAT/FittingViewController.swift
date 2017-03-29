@@ -412,7 +412,7 @@ class FittingViewController: UIViewController {
                                 
                                 cLayer.drawnPathPoints = updatedFitPoints   //the current points for the next round of SSD
                                 
-                                print (cLayer, updatedFitPoints[0], updatedFitPoints.last)
+                                print (cLayer, updatedFitPoints[0], updatedFitPoints.last!)
                                 
                                 var tempOutlinePath = UIBezierPath()               //use the current points
                                 tempOutlinePath.move(to: updatedFitPoints[0])
@@ -504,8 +504,8 @@ class FittingViewController: UIViewController {
             locationOfBeganTap = gesture.location(in: gesture.view)
             
             //adjust tap
-            locationOfBeganTap?.x -= 50
-            locationOfBeganTap?.y -= 50
+            //locationOfBeganTap?.x -= 50
+            //locationOfBeganTap?.y -= 50
             
             print ("began two finger pan", locationOfBeganTap!)
             localCreationID += 1
@@ -515,16 +515,14 @@ class FittingViewController: UIViewController {
             
             fitLine = createHorizontalLine(startTap: locationOfBeganTap, endTap: locationOfBeganTap)
             fitLine.localID = localCreationID
-            
-            // would be nice to color by SSD too.
             FitView.layer.addSublayer(fitLine)
             
             
             
         } else if gesture.state == UIGestureRecognizerState.changed {
             currentLocationOfTap = gesture.location(in: gesture.view)
-            currentLocationOfTap?.x -= 50
-            currentLocationOfTap?.y -= 50
+            //currentLocationOfTap?.x -= 50
+            //currentLocationOfTap?.y -= 50
             
             //allow the user to correct the Y-position (line remains horizontal)
             averageY = ((locationOfBeganTap?.y)! + (currentLocationOfTap?.y)!) / 2
@@ -535,18 +533,20 @@ class FittingViewController: UIViewController {
             let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: 0)
             let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
             
-            let SSD_size = target.count
-            let fitLineArray = Array(repeating: Float(averageY), count: SSD_size)
             
+            // produce the array of points representing the fitLine.
+            let SSD_size = target.count
+            
+            let fitLineArray = Array(repeating: Float(averageY), count: SSD_size)
             let xc = fitLineArray.count
             let xf = Array(0...xc)
+            //ugly. This logic is performed in the getDataFittingSlice too.
             let xfs = xf.map {x in Float(x) * screenPointsPerDataPoint! + Float(min((locationOfBeganTap?.x)!, (currentLocationOfTap?.x)!))}
             
             var drawnPath = [CGPoint]()
             for (xp, yp) in zip (xfs,fitLineArray) {
-            
                 let fitLinePoint = CGPoint (x: CGFloat(xp), y: CGFloat(yp))
-                    drawnPath.append(fitLinePoint)
+                drawnPath.append(fitLinePoint)
                 }
   
             fitLine.drawnPathPoints = drawnPath
@@ -564,14 +564,15 @@ class FittingViewController: UIViewController {
             CATransaction.begin()
             CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
             fitLine.path = pathOfFitLine(startPt: startPoint, endPt: endPoint)
+            fitLine.strokeColor = color.cgColor
+            CATransaction.commit()
             
             //make a copy of the current line with thick path for touch detection later
             fitLine.outlinePath = fitLine.path!.copy(strokingWithWidth: 50,
-                                                lineCap: CGLineCap(rawValue: 0)!,
-                                                lineJoin: CGLineJoin(rawValue: 0)!,
-                                                miterLimit: 1) as! CGMutablePath
-            fitLine.strokeColor = color.cgColor
-            CATransaction.commit()
+                                                     lineCap: CGLineCap(rawValue: 0)!,
+                                                     lineJoin: CGLineJoin(rawValue: 0)!,
+                                                     miterLimit: 1) as! CGMutablePath
+            
         }
         
         else if gesture.state == UIGestureRecognizerState.ended {
@@ -579,7 +580,7 @@ class FittingViewController: UIViewController {
             // defensive code - Tap must have begun
             if (locationOfBeganTap != nil) {
                 locationOfEndTap = gesture.location(in: gesture.view)
-                locationOfEndTap?.x -= 50
+                //locationOfEndTap?.x -= 50
                 //y is not used
                 
                 print ("end pan", locationOfEndTap!, averageY)
