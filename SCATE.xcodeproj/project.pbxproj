@@ -43,14 +43,14 @@
 /* Begin PBXFileReference section */
 		49032BBA1E892381001FE271 /* Scale.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Scale.swift; sourceTree = "<group>"; };
 		490353011E71AF9C00C7333D /* SettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
-		491A7CDB1D4CE2030017D238 /* ISCAT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ISCAT.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		491A7CDB1D4CE2030017D238 /* SCATE.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SCATE.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		491A7CDE1D4CE2030017D238 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		491A7CE01D4CE2030017D238 /* TraceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraceViewController.swift; sourceTree = "<group>"; };
 		491A7CE31D4CE2030017D238 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		491A7CE51D4CE2030017D238 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		491A7CE81D4CE2030017D238 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		491A7CEA1D4CE2030017D238 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		491A7CEF1D4CE2040017D238 /* ISCATTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ISCATTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		491A7CEF1D4CE2040017D238 /* SCATETests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SCATETests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		491A7CF31D4CE2040017D238 /* ISCATTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISCATTests.swift; sourceTree = "<group>"; };
 		491A7CF51D4CE2040017D238 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		491A7D001D4D06510017D238 /* TraceIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TraceIO.swift; sourceTree = "<group>"; };
@@ -91,8 +91,8 @@
 		491A7CD21D4CE2030017D238 = {
 			isa = PBXGroup;
 			children = (
-				491A7CDD1D4CE2030017D238 /* ISCAT */,
-				491A7CF21D4CE2040017D238 /* ISCATTests */,
+				491A7CDD1D4CE2030017D238 /* SCATE */,
+				491A7CF21D4CE2040017D238 /* SCATE Tests */,
 				491A7CDC1D4CE2030017D238 /* Products */,
 				493DDD7F1E71968400F5E12F /* Frameworks */,
 			);
@@ -101,13 +101,13 @@
 		491A7CDC1D4CE2030017D238 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				491A7CDB1D4CE2030017D238 /* ISCAT.app */,
-				491A7CEF1D4CE2040017D238 /* ISCATTests.xctest */,
+				491A7CDB1D4CE2030017D238 /* SCATE.app */,
+				491A7CEF1D4CE2040017D238 /* SCATETests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		491A7CDD1D4CE2030017D238 /* ISCAT */ = {
+		491A7CDD1D4CE2030017D238 /* SCATE */ = {
 			isa = PBXGroup;
 			children = (
 				491A7CDE1D4CE2030017D238 /* AppDelegate.swift */,
@@ -130,15 +130,17 @@
 				49BF8FF61E8AC2DA00B218ED /* fittingRoutines.swift */,
 				49E4457C1E81613D00FE5AEA /* dataSelecting.swift */,
 			);
+			name = SCATE;
 			path = ISCAT;
 			sourceTree = "<group>";
 		};
-		491A7CF21D4CE2040017D238 /* ISCATTests */ = {
+		491A7CF21D4CE2040017D238 /* SCATE Tests */ = {
 			isa = PBXGroup;
 			children = (
 				491A7CF31D4CE2040017D238 /* ISCATTests.swift */,
 				491A7CF51D4CE2040017D238 /* Info.plist */,
 			);
+			name = "SCATE Tests";
 			path = ISCATTests;
 			sourceTree = "<group>";
 		};
@@ -154,9 +156,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		491A7CDA1D4CE2030017D238 /* ISCAT */ = {
+		491A7CDA1D4CE2030017D238 /* SCATE */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 491A7CF81D4CE2040017D238 /* Build configuration list for PBXNativeTarget "ISCAT" */;
+			buildConfigurationList = 491A7CF81D4CE2040017D238 /* Build configuration list for PBXNativeTarget "SCATE" */;
 			buildPhases = (
 				491A7CD71D4CE2030017D238 /* Sources */,
 				491A7CD81D4CE2030017D238 /* Frameworks */,
@@ -167,14 +169,14 @@
 			);
 			dependencies = (
 			);
-			name = ISCAT;
+			name = SCATE;
 			productName = ISCAT;
-			productReference = 491A7CDB1D4CE2030017D238 /* ISCAT.app */;
+			productReference = 491A7CDB1D4CE2030017D238 /* SCATE.app */;
 			productType = "com.apple.product-type.application";
 		};
-		491A7CEE1D4CE2040017D238 /* ISCATTests */ = {
+		491A7CEE1D4CE2040017D238 /* SCATETests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 491A7CFB1D4CE2040017D238 /* Build configuration list for PBXNativeTarget "ISCATTests" */;
+			buildConfigurationList = 491A7CFB1D4CE2040017D238 /* Build configuration list for PBXNativeTarget "SCATETests" */;
 			buildPhases = (
 				491A7CEB1D4CE2040017D238 /* Sources */,
 				491A7CEC1D4CE2040017D238 /* Frameworks */,
@@ -185,9 +187,9 @@
 			dependencies = (
 				491A7CF11D4CE2040017D238 /* PBXTargetDependency */,
 			);
-			name = ISCATTests;
+			name = SCATETests;
 			productName = ISCATTests;
-			productReference = 491A7CEF1D4CE2040017D238 /* ISCATTests.xctest */;
+			productReference = 491A7CEF1D4CE2040017D238 /* SCATETests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -212,7 +214,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 491A7CD61D4CE2030017D238 /* Build configuration list for PBXProject "ISCAT" */;
+			buildConfigurationList = 491A7CD61D4CE2030017D238 /* Build configuration list for PBXProject "SCATE" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -225,8 +227,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				491A7CDA1D4CE2030017D238 /* ISCAT */,
-				491A7CEE1D4CE2040017D238 /* ISCATTests */,
+				491A7CDA1D4CE2030017D238 /* SCATE */,
+				491A7CEE1D4CE2040017D238 /* SCATETests */,
 			);
 		};
 /* End PBXProject section */
@@ -305,7 +307,7 @@
 /* Begin PBXTargetDependency section */
 		491A7CF11D4CE2040017D238 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 491A7CDA1D4CE2030017D238 /* ISCAT */;
+			target = 491A7CDA1D4CE2030017D238 /* SCATE */;
 			targetProxy = 491A7CF01D4CE2040017D238 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -465,7 +467,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "de.FMP-Berlin.ISCATTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 3.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ISCAT.app/ISCAT";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SCATE.app/SCATE";
 			};
 			name = Debug;
 		};
@@ -478,14 +480,14 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "de.FMP-Berlin.ISCATTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 3.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ISCAT.app/ISCAT";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SCATE.app/SCATE";
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		491A7CD61D4CE2030017D238 /* Build configuration list for PBXProject "ISCAT" */ = {
+		491A7CD61D4CE2030017D238 /* Build configuration list for PBXProject "SCATE" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				491A7CF61D4CE2040017D238 /* Debug */,
@@ -494,7 +496,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		491A7CF81D4CE2040017D238 /* Build configuration list for PBXNativeTarget "ISCAT" */ = {
+		491A7CF81D4CE2040017D238 /* Build configuration list for PBXNativeTarget "SCATE" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				491A7CF91D4CE2040017D238 /* Debug */,
@@ -503,7 +505,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		491A7CFB1D4CE2040017D238 /* Build configuration list for PBXNativeTarget "ISCATTests" */ = {
+		491A7CFB1D4CE2040017D238 /* Build configuration list for PBXNativeTarget "SCATETests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				491A7CFC1D4CE2040017D238 /* Debug */,
