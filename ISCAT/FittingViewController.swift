@@ -198,6 +198,7 @@ class FittingViewController: UIViewController {
     
     @IBAction func popUpWasChanged(_ sender: UISegmentedControl, forEvent event: UIEvent) {
         print ("popup changed")
+        //place a 250 ms delay on the disappearance of the pop-up control
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             self.PopUpControl.isHidden = true
             self.PopUpControl.selectedSegmentIndex = -1
