@@ -18,7 +18,7 @@ class FittingViewController: UIViewController {
     var delegate: FitViewControllerDelegate? = nil
     var panCount : Int = 0          //not used
     var swipeCount : Int = 0        //never used
-    var fitLine: CAShapeLayer!
+    var fitLine: CustomLayer!
     var gaussianLayer: CustomLayer!
     var gaussianPath: CGPath!
     var localCreationID = 0
@@ -78,7 +78,9 @@ class FittingViewController: UIViewController {
     @IBOutlet weak var rejectFit: UIButton!
 
     @IBOutlet weak var PopUpControl: UISegmentedControl!
-        
+    @IBOutlet weak var popUpControlLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var popUpControlBottomConstraint: NSLayoutConstraint!
+    
     func fitTraceView() {
         //draw a fixed data trace on the screen
         
@@ -112,49 +114,9 @@ class FittingViewController: UIViewController {
         FitView.layer.addSublayer(traceLayer)
     }
     
-    func optimiseFit() -> [Int]{
-        print ("Fitting subroutine")
-        return [0]
-    }
-    
-    //called when user starts a pan
-    func createHorizontalLine (startTap: CGPoint!, endTap: CGPoint!) -> CustomLayer {
-        
-        print ("drawing line:", startTap!, endTap!)
-        //rough conversion of y value
-        averageY = (startTap.y + endTap.y) / 2 - 50
-        
-        let startPoint = CGPoint(x: (startTap.x - 50), y: averageY)     //-50 here for feel
-        let endPoint = CGPoint(x: (endTap.x - 50), y: averageY)         //as above
-        
-        let thickness: CGFloat = 9.0
 
-        let fitLayer = CustomLayer()        //subclass of CAShapeLayer with ID
-        fitLayer.path = pathOfFitLine(startPt: startPoint, endPt: endPoint)     //get path for line
-        fitLayer.strokeColor = UIColor.red.cgColor
-        fitLayer.fillColor = nil
-        fitLayer.lineWidth = thickness
-        return fitLayer
-    }
   
-    //whilst pan is updating, make the new line
-    func pathOfFitLine(startPt: CGPoint, endPt: CGPoint) -> CGPath {
-        let fitBezier = UIBezierPath()
-        fitBezier.move(to: startPt)
-        fitBezier.addLine(to: endPt)
-        return fitBezier.cgPath
-    }
-    
-    
-    func calculateSSD (A: [Float], B:[Float]) -> Float {
-        var ssd :Float = 0.0
-        for (e, f)  in zip (A, B) {
-            ssd += pow ((e - f), 2)
-        }
-        //print ("\(ssd)")
-        return ssd
-    }
-    
+        
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -175,10 +137,10 @@ class FittingViewController: UIViewController {
     }
     
     @IBAction func drawnFitTap(_ sender: UITapGestureRecognizer) {
-        print ("Single tap.")
+        
         let view = sender.view
         var loc = sender.location(in: view)
-        
+        print ("Single tap at \(loc).")
         if let hitting = view?.layer.hitTest(loc) {
             if hitting.sublayers != nil {
                 for hitt in hitting.sublayers! {
@@ -189,7 +151,7 @@ class FittingViewController: UIViewController {
                         loc = hitCustom.convert(loc, from: hitCustom.superlayer) // try ? NO? move select/deselect detections to right place
                         //print ("Loc after", loc)
                         //print ("hC.sl,\(hitCustom.superlayer)")
-                        if (hitCustom.path?.contains(loc))!  {
+                        if (hitCustom.outlinePath.contains(loc))  {
                             print ("You hit event \(hitCustom.localID!) at \(loc)")
                             let tappedEvent = fitData.list.first(where: {$0.localID == hitCustom.localID!})
                             
@@ -226,17 +188,21 @@ class FittingViewController: UIViewController {
         }
     }
     
-    @IBAction func longPress(_ sender: UILongPressGestureRecognizer) {
+    @IBAction func longPress(_ gesture: UILongPressGestureRecognizer) {
+        let longPressLocation = gesture.location(in: gesture.view)
         PopUpControl.isHidden = false
         PopUpControl.layer.zPosition = 1000
-        
+        popUpControlBottomConstraint.constant = 650.0 - longPressLocation.y
+        popUpControlLeadingConstraint.constant = longPressLocation.x
     }
     
-    //disappears too fast
     @IBAction func popUpWasChanged(_ sender: UISegmentedControl, forEvent event: UIEvent) {
         print ("popup changed")
-        PopUpControl.isHidden = true
-        PopUpControl.selectedSegmentIndex = -1
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            self.PopUpControl.isHidden = true
+            self.PopUpControl.selectedSegmentIndex = -1
+        }
+        
     }
 
     //this doesn't do a thing, yet need to frame popup and ask for
@@ -294,17 +260,18 @@ class FittingViewController: UIViewController {
     
     @IBAction func fit2Pan(_ gesture: UIPanGestureRecognizer) {
         if gesture.state == UIGestureRecognizerState.began {
-            fitEventToStore = Event()
-            //unclassified at this point
-            //created now so SSD and color can be stored during gesture
+            fitEventToStore = Event()   //unclassified at this point
+            //created now so that SSD and color can be updated during gesture
+            fitEventToStore?.fitSSD = worstSSD
+            fitEventToStore?.colorFitSSD = UIColor.red
             
-            locationOfBeganTap = gesture.location(in: self.view)
+            locationOfBeganTap = gesture.location(in: gesture.view)
+            
             if selected.list.isEmpty {
             // create event
                 print ("Began one finger pan.", locationOfBeganTap!)
                 localCreationID += 1
                 
-                // console.dataSource()
                 gaussianPath = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
                 gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
                 gaussianLayer.localID = localCreationID
@@ -315,11 +282,7 @@ class FittingViewController: UIViewController {
             //move selected
                 print ("Began one finger drag of \(selected).", locationOfBeganTap!)
                 
-                //store initial selected layer transforms
-                //store initial coordinates of selected events
-                //store x, y points of initial fits as drawn on the screen
-                
-                //provide empty dictionaries for the start of the drag.
+                //these dictionaries store selected events, layer transforms, and x,y screen points of original fits
                 selectedEvents = [:]
                 selectedTransforms = [:]
                 selectedFitPoints = [:]
@@ -328,7 +291,8 @@ class FittingViewController: UIViewController {
                     for layer in (gesture.view?.layer.sublayers!)! {
                         if let cLayer = layer as? CustomLayer {
                             if cLayer.localID == event.localID {
-                                var stored = StoredEvent()          //struct not class
+                                
+                                var stored = StoredEvent()          //struct not class, events not references to events
                                 stored.timePt = event.timePt
                                 stored.duration = event.duration
                                 //stored.amplitude = event.amplitude ///will need to change this later
@@ -344,7 +308,7 @@ class FittingViewController: UIViewController {
             }
                 
         } else if gesture.state == UIGestureRecognizerState.changed {
-            currentLocationOfTap = gesture.location(in: self.view)
+            currentLocationOfTap = gesture.location(in: gesture.view)
             //globally transform to be relative to trace window?
             
             let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
@@ -377,7 +341,11 @@ class FittingViewController: UIViewController {
                 gaussianLayer.strokeColor = color.cgColor
                 CATransaction.commit()
                 
-                
+                //will be checked for hits
+                gaussianLayer.outlinePath = gaussianLayer.path!.copy(strokingWithWidth: 60,
+                                                         lineCap: CGLineCap(rawValue: 0)!,
+                                                         lineJoin: CGLineJoin(rawValue: 0)!,
+                                                         miterLimit: 1) as! CGMutablePath
             
             } else {
                 // some events are selected
@@ -391,7 +359,12 @@ class FittingViewController: UIViewController {
                                 print ("dragging custom layer \(cLayer.localID!)")
                                 
                                 //pass initial event to get start of event at start of drag, not the updating event
-                                let targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
+                                var targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
+                                
+                                //a bit clumsy to calculate twice and overwrite
+                                if event.kindOfEntry == .sojourn {
+                                    targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: 0)
+                                }
                                 
                                 let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
                                 
@@ -404,7 +377,7 @@ class FittingViewController: UIViewController {
                                 print ("event start x:", event.timePt - event.duration! / 5 - Float(gaussianKernelHalfWidth) * screenPointsPerDataPoint!)
                                 //calculate SSD 
                                 let SSD_size = Float(target.count)
-                                //print (fitPoints, target) //target is off in x but fitpoints is disastrous in y (much too large!!!)
+                                //print (fitPoints, target)
                                 let normalisedSSD = calculateSSD (A: fitPoints, B: target) / SSD_size
                                 // bad fit is red, good fit is green
                                 let color = fitColor(worstSSD : worstSSD, currentSSD: normalisedSSD)
@@ -430,6 +403,7 @@ class FittingViewController: UIViewController {
                                 let incrementalTransformY = ty - originalTransform!.m42
                                 
                                 //update with current transform from points (in screen coordinates) at the start of the drag.
+                                
                                 var updatedFitPoints = [CGPoint]()
                                 for point in selectedFitPoints[cLayer.localID!]! {
                                     let newPoint = CGPoint(x: point.x + incrementalTransformX, y: point.y + incrementalTransformY)
@@ -437,6 +411,16 @@ class FittingViewController: UIViewController {
                                 
                                 cLayer.drawnPathPoints = updatedFitPoints   //the current points for the next round of SSD
                                 
+                                var tempOutlinePath = UIBezierPath()               //based on the original points
+                                tempOutlinePath.move(to: selectedFitPoints[cLayer.localID!]![0])
+                                for i in 1 ..< selectedFitPoints[cLayer.localID!]!.count {
+                                    tempOutlinePath.addLine(to: selectedFitPoints[cLayer.localID!]![i])
+                                    }
+                                    
+                                var affineT = CATransform3DGetAffineTransform(newTransform)
+                                cLayer.outlinePath = tempOutlinePath.cgPath.mutableCopy(using: &affineT)!
+                                
+                                    
                                 //update with current transform from timePt at the start of the drag.
                                 let savedEvent = selectedEvents[cLayer.localID!]
                                 event.timePt = (savedEvent?.timePt)! + Float(incrementalTransformX)
@@ -454,41 +438,41 @@ class FittingViewController: UIViewController {
             
         } else if gesture.state == UIGestureRecognizerState.ended {
             if selected.list.isEmpty {
-            // store new event details
+                // store new event details
+                    
+                locationOfEndTap = gesture.location(in: gesture.view)
+                print ("end one finger pan", locationOfEndTap!)
                 
-            locationOfEndTap = gesture.location(in: self.view)
-            print ("end one finger pan", locationOfEndTap!)
-            
-            //provide a choice here to get rid of the fit?
-            //but what gesture?
-            //what about resolving/overwriting?
-            
-            let graphicalAmplitude = Float((locationOfEndTap?.y)! - (locationOfBeganTap?.y)!)       //no conversion into real world units yet
-            
-            if graphicalAmplitude > 0 {
-                fitEventToStore!.kindOfEntry = Entries.opening
-            } else {
-                fitEventToStore!.kindOfEntry = Entries.shutting
-                //this idea doesn't work because shuttings are not negative amp events!
-            }
-            // to retrieve event information from list later
-            fitEventToStore!.localID = localCreationID
-            // acccount for reverse (R -> L pan) fits with min and max
-            let fittedStart = min (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
-            let fittedEnd = max (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
-            
-            //storing screen coordinates right now, will adapt to real world coordinates later
-            fitEventToStore!.timePt = fittedStart
-            fitEventToStore!.amplitude = Double(graphicalAmplitude)
-            fitEventToStore!.duration = fittedEnd - fittedStart
-            //SSD and color are already stored during drag
-            
-            //panCount += 1               //not sure if this is useful now.
-           
-            print (fitEventToStore!.printable())
-            fitData.eventAppend(e: fitEventToStore!)
-            //store information in that links this layer to this event and vice versa
-            print (fitEventToStore!.registered!, gaussianLayer.localID!)
+                //provide a choice here to get rid of the fit?
+                //but what gesture?
+                //what about resolving/overwriting?
+                
+                let graphicalAmplitude = Float((locationOfEndTap?.y)! - (locationOfBeganTap?.y)!)       //no conversion into real world units yet
+                
+                if graphicalAmplitude > 0 {
+                    fitEventToStore!.kindOfEntry = Entries.opening
+                } else {
+                    fitEventToStore!.kindOfEntry = Entries.shutting
+                    //this idea doesn't work because shuttings are not negative amp events!
+                }
+                // to retrieve event information from list later
+                fitEventToStore!.localID = localCreationID
+                // acccount for reverse (R -> L pan) fits with min and max
+                let fittedStart = min (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
+                let fittedEnd = max (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
+                
+                //storing screen coordinates right now, will adapt to real world coordinates later
+                fitEventToStore!.timePt = fittedStart
+                fitEventToStore!.amplitude = Double(graphicalAmplitude)
+                fitEventToStore!.duration = fittedEnd - fittedStart
+                //SSD and color are already stored during drag
+                
+                //panCount += 1               //not sure if this is useful now.
+               
+                print (fitEventToStore!.printable())
+                fitData.eventAppend(e: fitEventToStore!)
+                //store information in that links this layer to this event and vice versa
+                print (fitEventToStore!.registered!, gaussianLayer.localID!)
             } else {
                 
                 //finish up with event dragging
@@ -496,7 +480,8 @@ class FittingViewController: UIViewController {
                     for layer in (gesture.view?.layer.sublayers!)! {
                         if let cLayer = layer as? CustomLayer {
                             if cLayer.localID == event.localID {
-                                print ("Finished dragging event \(cLayer.localID)")
+                                print ("Finished dragging event \(String(describing: cLayer.localID))")
+                                //cLayer.transform = CATransform3DIdentity
                                 //each event was updated in place during the drag
                             }
                         }
@@ -508,10 +493,15 @@ class FittingViewController: UIViewController {
    
     @IBAction func fitPan(_ gesture: UIPanGestureRecognizer) {
         
-        // recognize pan and get coords
+        // recognize pan, draw sojourn line
         if gesture.state == UIGestureRecognizerState.began {
+            fitEventToStore = Event()   //wipe event container 
+            locationOfBeganTap = gesture.location(in: gesture.view)
             
-            locationOfBeganTap = gesture.location(in: self.view)
+            //adjust tap
+            locationOfBeganTap?.x -= 50
+            locationOfBeganTap?.y -= 50
+            
             print ("began two finger pan", locationOfBeganTap!)
             localCreationID += 1
             
@@ -519,19 +509,49 @@ class FittingViewController: UIViewController {
             //print (String(format:"averageY: %@", averageY))
             
             fitLine = createHorizontalLine(startTap: locationOfBeganTap, endTap: locationOfBeganTap)
+            fitLine.localID = localCreationID
+            
             // would be nice to color by SSD too.
             FitView.layer.addSublayer(fitLine)
             
+            
+            
         } else if gesture.state == UIGestureRecognizerState.changed {
-            currentLocationOfTap = gesture.location(in: self.view)
+            currentLocationOfTap = gesture.location(in: gesture.view)
+            currentLocationOfTap?.x -= 50
+            currentLocationOfTap?.y -= 50
             
-            //allow the user to correct the Y-position (line remains horizontal
-            // -50 to adjust to finger position in L->R fashion
+            //allow the user to correct the Y-position (line remains horizontal)
+            averageY = ((locationOfBeganTap?.y)! + (currentLocationOfTap?.y)!) / 2
+            let startPoint = CGPoint(x: (locationOfBeganTap?.x)!  , y: averageY)
+            let endPoint = CGPoint(x: (currentLocationOfTap?.x)! , y: averageY)
             
-            averageY = ((locationOfBeganTap?.y)! + (currentLocationOfTap?.y)!) / 2 - 50  //inferring number types here
-            let startPoint = CGPoint(x: ((locationOfBeganTap?.x)! - 50)  , y: averageY)
-            let endPoint = CGPoint(x: ((currentLocationOfTap?.x)! - 50) , y: averageY)
-
+            //no filter so no kernel
+            let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: 0)
+            let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
+            
+            let SSD_size = target.count
+            let fitLineArray = Array(repeating: Float(averageY), count: SSD_size)
+            
+            let xc = fitLineArray.count
+            let xf = Array(0...xc)
+            let xfs = xf.map {x in Float(x) * screenPointsPerDataPoint!}
+            
+            var drawnPath = [CGPoint]()
+            for (xp, yp) in zip (xfs,fitLineArray) {
+            
+                let fitLinePoint = CGPoint (x: CGFloat(xp), y: CGFloat(yp))
+                    drawnPath.append(fitLinePoint)
+                }
+  
+            fitLine.drawnPathPoints = drawnPath
+            
+            let normalisedSSD = calculateSSD (A: fitLineArray, B: target) / Float(SSD_size)
+            // bad fit is red, good fit is green
+            let color = fitColor(worstSSD : worstSSD, currentSSD: normalisedSSD)
+            //print (normalisedSSD, color)
+            fitEventToStore!.fitSSD = normalisedSSD
+            fitEventToStore!.colorFitSSD = color
             
             //no animations
             //https://github.com/iamdoron/panABallAttachedToALine/blob/master/panLineRotation/ViewController.swift
@@ -539,6 +559,13 @@ class FittingViewController: UIViewController {
             CATransaction.begin()
             CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
             fitLine.path = pathOfFitLine(startPt: startPoint, endPt: endPoint)
+            
+            //make a copy of the current line with thick path for touch detection later
+            fitLine.outlinePath = fitLine.path!.copy(strokingWithWidth: 50,
+                                                lineCap: CGLineCap(rawValue: 0)!,
+                                                lineJoin: CGLineJoin(rawValue: 0)!,
+                                                miterLimit: 1) as! CGMutablePath
+            fitLine.strokeColor = color.cgColor
             CATransaction.commit()
         }
         
@@ -546,28 +573,27 @@ class FittingViewController: UIViewController {
             
             // defensive code - Tap must have begun
             if (locationOfBeganTap != nil) {
-                locationOfEndTap = gesture.location(in: self.view)
+                locationOfEndTap = gesture.location(in: gesture.view)
+                locationOfEndTap?.x -= 50
+                //y is not used
+                
                 print ("end pan", locationOfEndTap!, averageY)
-                let fitEventToStore = Event(.sojourn)
-                fitEventToStore.localID = localCreationID
+                fitEventToStore!.kindOfEntry = Entries.sojourn
+                fitEventToStore!.localID = localCreationID
                 // to retrieve event information from list later
                 // acccount for reverse (R -> L pan) fits with min and max
                 let fittedStart = min (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
                 let fittedEnd = max (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
                 
                 //storing screen coordinates right now, will adapt to real world coordinates later
-                fitEventToStore.timePt = fittedStart
-                fitEventToStore.amplitude = Double(averageY)
-                fitEventToStore.duration = fittedEnd - fittedStart
+                fitEventToStore!.timePt = fittedStart
+                fitEventToStore!.amplitude = Double(averageY)
+                fitEventToStore!.duration = fittedEnd - fittedStart
                 
-                panCount += 1
-                print (fitEventToStore.printable(), fitEventToStore.localID!)
-                fitData.eventAppend(e: fitEventToStore)
+                print (fitEventToStore!.printable(), fitEventToStore!.localID!)
+                fitData.eventAppend(e: fitEventToStore!)
                 
             }
-            
-            //saveFitLine?
-            
         }
     }
         
@@ -595,13 +621,13 @@ class FittingViewController: UIViewController {
     
     
     @IBAction func rejectFit(_ sender: Any) {
-        print ("reject button")
+        print ("Reject button")
         delegate?.FitVCDidFinish(controller: self, touches: panCount, fit: eventList())
     }
 
 
     @IBAction func goBack(_ sender: Any) {
-        print ("store button")
+        print ("Store button")
         //pan count is not used any more.
         delegate?.FitVCDidFinish(controller: self, touches: panCount, fit: fitData)
         

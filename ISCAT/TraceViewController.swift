@@ -8,6 +8,9 @@
 
 import UIKit
 import SwiftyDropbox
+// when you get an error about compilation under wrong Swift version, use:
+// carthage update --platform iOS in the directory to retrieve and rebuild
+
 
 class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDataSource, UITableViewDelegate, FitViewControllerDelegate, SettingsViewControllerDelegate, EventsViewControllerDelegate {
 

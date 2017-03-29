@@ -1,22 +1,10 @@
 {
+  "xcodeVersion" : "Xcode 8.3\nBuild version 8E162",
   "commitish" : "4.1.1",
   "iOS" : [
     {
       "name" : "SwiftyDropbox",
-      "md5" : "4fc0fe5ec262bf737c6340585268ae32"
-    }
-  ],
-  "xcodeVersion" : "Xcode 8.2.1\nBuild version 8C1002",
-  "watchOS" : [
-
-  ],
-  "tvOS" : [
-
-  ],
-  "Mac" : [
-    {
-      "name" : "SwiftyDropbox",
-      "md5" : "da475eeb3546f2ebfcb38038412e0bdf"
+      "md5" : "4d13a462ee38294ccae82c46a3875609"
     }
   ]
 }

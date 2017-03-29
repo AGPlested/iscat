@@ -111,6 +111,11 @@ class GaussianFit {
         
         let gLayer = CustomLayer()
         gLayer.path = gPath
+        gLayer.outlinePath = gPath.copy(strokingWithWidth: 15,
+                            lineCap: CGLineCap(rawValue: 0)!,
+                            lineJoin: CGLineJoin(rawValue: 0)!,
+                            miterLimit: 1) as! CGMutablePath
+        
         gLayer.drawnPathPoints = drawnPath
         //rearrange to perform these actions more consistently?
         //print ("glayer", gLayer.drawnPathPoints)
@@ -121,22 +126,7 @@ class GaussianFit {
     }
 }
 
-class CustomLayer: CAShapeLayer {
-    var localID: Int?
-    var drawnPathPoints = [CGPoint]() ///Needs to be stored each time!
-}
 
-func fitColor(worstSSD: Float, currentSSD: Float) -> UIColor {
-    var current = currentSSD
-    if current == 0 {current = 1.0}
-    if current > worstSSD {current = worstSSD}
-    let sensitivity : Float = 2.0           //typical value 2 or 3??
-    
-    var val = CGFloat( ( sensitivity * ( ( log(currentSSD) - log(worstSSD) ) / log(worstSSD) ) ) + 1.0)
-    if val > 1.0 {val = 1.0}
-    if val < 0.0 {val = 0.0}    //super safe - val must be between 0 and 1
-    return UIColor(red: val, green: 1.0 - val, blue: 0.0, alpha: 1.0)
-}
 
 /*
  func createGaussianArray (mu: Float = 0.5) -> ([Float], [Float]) {

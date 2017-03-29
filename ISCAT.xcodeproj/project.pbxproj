@@ -25,6 +25,7 @@
 		4964D7E91E7198F500078EF9 /* FittingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4964D7E81E7198F500078EF9 /* FittingViewController.swift */; };
 		4973B5FE1E83BD02001E8EC2 /* EventsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4973B5FD1E83BD02001E8EC2 /* EventsViewController.swift */; };
 		498E2F321E729E2E00BBB0D8 /* settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498E2F311E729E2E00BBB0D8 /* settings.swift */; };
+		49BF8FF71E8AC2DA00B218ED /* fittingRoutines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49BF8FF61E8AC2DA00B218ED /* fittingRoutines.swift */; };
 		49C8B5431E69A02D005455CB /* Gaussian.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49C8B5421E69A02D005455CB /* Gaussian.swift */; };
 		49E4457D1E81613D00FE5AEA /* dataSelecting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49E4457C1E81613D00FE5AEA /* dataSelecting.swift */; };
 /* End PBXBuildFile section */
@@ -62,6 +63,7 @@
 		4964D7E81E7198F500078EF9 /* FittingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FittingViewController.swift; sourceTree = "<group>"; };
 		4973B5FD1E83BD02001E8EC2 /* EventsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventsViewController.swift; sourceTree = "<group>"; };
 		498E2F311E729E2E00BBB0D8 /* settings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = settings.swift; sourceTree = "<group>"; };
+		49BF8FF61E8AC2DA00B218ED /* fittingRoutines.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = fittingRoutines.swift; sourceTree = "<group>"; };
 		49C8B5421E69A02D005455CB /* Gaussian.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Gaussian.swift; sourceTree = "<group>"; };
 		49E4457C1E81613D00FE5AEA /* dataSelecting.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = dataSelecting.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -125,6 +127,7 @@
 				490353011E71AF9C00C7333D /* SettingsViewController.swift */,
 				4973B5FD1E83BD02001E8EC2 /* EventsViewController.swift */,
 				4964D7E81E7198F500078EF9 /* FittingViewController.swift */,
+				49BF8FF61E8AC2DA00B218ED /* fittingRoutines.swift */,
 				49E4457C1E81613D00FE5AEA /* dataSelecting.swift */,
 			);
 			path = ISCAT;
@@ -278,6 +281,7 @@
 				49529B1B1DBA2BA2006CF048 /* TraceDisplay.swift in Sources */,
 				491A7CE11D4CE2030017D238 /* TraceViewController.swift in Sources */,
 				4973B5FE1E83BD02001E8EC2 /* EventsViewController.swift in Sources */,
+				49BF8FF71E8AC2DA00B218ED /* fittingRoutines.swift in Sources */,
 				49032BBB1E892381001FE271 /* Scale.swift in Sources */,
 				491A7CDF1D4CE2030017D238 /* AppDelegate.swift in Sources */,
 				492304F71E796E4800C2A439 /* CustomCells.swift in Sources */,

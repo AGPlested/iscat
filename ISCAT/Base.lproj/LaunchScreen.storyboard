@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11762" systemVersion="16D32" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12118" systemVersion="16D32" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
     <device id="ipad9_7" orientation="landscape">
         <adaptation id="fullscreen"/>
     </device>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11757"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12086"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -21,11 +21,11 @@
                         <rect key="frame" x="0.0" y="0.0" width="1024" height="768"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="v0.2 Plested Group, FMP Berlin github.com/agplested" textAlignment="center" lineBreakMode="wordWrap" numberOfLines="4" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DjQ-vo-I5o">
-                                <rect key="frame" x="367" y="381" width="290" height="100"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="v0.1 Alpha Andrew Plested and the Plested Lab, FMP-Berlin github.com/agplested" textAlignment="center" lineBreakMode="wordWrap" numberOfLines="4" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DjQ-vo-I5o">
+                                <rect key="frame" x="326" y="383" width="372" height="100"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="100" id="db9-W8-neD"/>
-                                    <constraint firstAttribute="width" constant="290" id="p4s-IJ-2OK"/>
+                                    <constraint firstAttribute="width" constant="372" id="p4s-IJ-2OK"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="20"/>
                                 <color key="textColor" red="0.94553571430000005" green="0.79952566960000004" blue="0.16266741069999999" alpha="1" colorSpace="calibratedRGB"/>
@@ -41,12 +41,19 @@
                                 <color key="textColor" red="0.94553571430000005" green="0.79952566960000004" blue="0.16266741069999999" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="This software was developed with the support of the ERC grant &quot;GluActive&quot;, project number: 647895" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="14f-Bd-vhI">
+                                <rect key="frame" x="20" y="725" width="766" height="35"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="12"/>
+                                <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" red="0.43529411759999997" green="0.4431372549" blue="0.47450980390000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="DjQ-vo-I5o" firstAttribute="top" secondItem="dDu-pv-HWU" secondAttribute="bottom" constant="-4" id="Hwd-nD-0qI"/>
+                            <constraint firstItem="DjQ-vo-I5o" firstAttribute="top" secondItem="dDu-pv-HWU" secondAttribute="bottom" constant="-6" id="Hwd-nD-0qI"/>
                             <constraint firstItem="dDu-pv-HWU" firstAttribute="centerX" secondItem="DjQ-vo-I5o" secondAttribute="centerX" id="VfO-1Q-3oR"/>
-                            <constraint firstItem="xb3-aO-Qok" firstAttribute="top" secondItem="DjQ-vo-I5o" secondAttribute="bottom" constant="287" id="t8a-zl-dGt"/>
+                            <constraint firstItem="xb3-aO-Qok" firstAttribute="top" secondItem="DjQ-vo-I5o" secondAttribute="bottom" constant="285" id="t8a-zl-dGt"/>
                             <constraint firstItem="dDu-pv-HWU" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="zTX-Zc-zt5"/>
                         </constraints>
                     </view>

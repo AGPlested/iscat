@@ -39,23 +39,25 @@ class Event {
     var order: Int = 0         //default list position is 0
     var duration: Float?         //some types of event have no meaningful duration
     var amplitude: Double?     //some events don't have any amplitude (WHY DOUBLE?)
-    var colorFitSSD: UIColor?   //if event was fitted, save the color for later
-    var fitSSD : Float?         //save SSD per data point from fit
+    
     //event metadata
     var kindOfEntry: Entries
+    var colorFitSSD: UIColor?   //if event was fitted, save the color for later
+    var fitSSD : Float?         //save SSD per data point from fit
     var isChannelEvent : Bool  //if false, it's an "other event" :
     //meaning an event or mark in the idealization that is not biophysical
     var text: String?
     var name: String?
+    
     //local ID of the event in an active fit view.
     var localID: Int?
+    
     //event will be date-stamped when registered to an event list
     //must be optional, can't be stored now.
     var registered: String?
     
     init(_ kOE : Entries = .unclassified) {
         kindOfEntry = kOE
-        
         if kindOfEntry == .unclassified {
             text = "This event was unclassified by default."
         }
@@ -65,7 +67,6 @@ class Event {
         } else {
             isChannelEvent = false
         }
-        
     }
     
     func printable () -> String {
