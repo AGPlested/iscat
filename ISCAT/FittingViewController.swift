@@ -177,6 +177,8 @@ class FittingViewController: UIViewController {
                             
                             
                 
+                            //still seems to be selecting below???
+                            
                             
                             //selectDONE, deselectDONE, delete, move DONE, show DONE....
 

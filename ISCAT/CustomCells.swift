@@ -10,10 +10,13 @@ import UIKit
 
 //cells for settings table
 
-class CustomSettingCell: UITableViewCell {
-    @IBOutlet weak var view: UIView!
-    @IBOutlet weak var SettingLabel: UILabel!
-    @IBOutlet weak var SettingValue: UILabel!
+//seems like there is little point because these different classes must be passed back from the same data source.
+
+class StandardSettingCell: UITableViewCell {
+    
+    @IBOutlet weak var standardSettingView: UIView!
+    @IBOutlet weak var standardLabel: UILabel!
+    @IBOutlet weak var standardValue: UILabel!
 }
 
 class ToggleSettingCell: UITableViewCell {
@@ -26,6 +29,8 @@ class SliderSettingCell: UITableViewCell {
     @IBOutlet weak var sliderContentView: UIView!
     @IBOutlet weak var sliderLabel: UILabel!
     @IBOutlet weak var settingSlider: UISlider!
+    @IBOutlet weak var sliderValue: UILabel!
+    
 }
 
 

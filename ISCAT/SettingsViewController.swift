@@ -16,14 +16,13 @@ protocol SettingsViewControllerDelegate {
 
 class SettingsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
-    
-    
     @IBOutlet weak var settingsView: UIView!
     @IBOutlet weak var BackButton: UIButton!
-
     @IBOutlet weak var tableView: UITableView!
     
-    let cellReuseIdentifier = "customCell1"
+    let cellReuseID = "standardSetting"
+    let sliderCellReuseID = "sliderSetting"
+    let toggleCellReuseID = "toggleSetting"
     
     var localSettings : SettingsList?
     var settingsTableRows = [SettingsItem]()
@@ -54,7 +53,6 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
         }
         
         //print (localSettings!.basicChunk.textLabel)
-        
         if settingsTableRows.count > 0 {
             return
         }
@@ -64,13 +62,11 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
         for (sName, sValue) in localMirror.children {
             settingsTableRows.append(sValue as! SettingsItem)
             print (sName!, sValue)
-            
         }
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
     }
     
     //this code taken from the example Dropbox Swift app integration.
@@ -79,7 +75,12 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
         DropboxClientsManager.authorizeFromController(UIApplication.shared, controller: self, openURL: {(url: URL) -> Void in UIApplication.shared.openURL(url)})
     }
    
-    
+    func sliderChanged(sender: UISlider ) {
+        let item = settingsTableRows[sender.tag]
+        item.setValue(val: sender.value)
+        print (item.sVal)
+        //tableView.reloadData()
+    }
     // MARK: - Table view data source
     
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
@@ -91,23 +92,45 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cCell: CustomSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseIdentifier, for: indexPath) as! CustomSettingCell
-        let item = settingsTableRows[indexPath.row]
-        cCell.SettingLabel.text =  item.textLabel
         
-        // handle the different types of setting value case-by-case
+        //dequeue different settings cells
+        let item = settingsTableRows[indexPath.row]
+        print (item)
         switch item.sVal {
-            case .integer:
-                cCell.SettingValue.text = "\(item.getIntValue())"
-            case .textParameter(let pVal):
-                cCell.SettingValue.text =  pVal
-            case .float:
-                cCell.SettingValue.text! =  "\(item.getFloatValue())"
+            case .toggle:
+                let cCell: ToggleSettingCell = tableView.dequeueReusableCell(withIdentifier: toggleCellReuseID, for: indexPath) as! ToggleSettingCell
+                cCell.toggleLabel.text = "Toggle control"
+                cCell.toggleSetting.isOn = true
+                return cCell
+            
+            case .slider:
+                let cCell: SliderSettingCell = tableView.dequeueReusableCell(withIdentifier: sliderCellReuseID, for: indexPath) as! SliderSettingCell
+                
+                cCell.settingSlider.value = Float(item.getFloatValue())
+                cCell.sliderLabel.text =  item.textLabel
+                cCell.sliderValue.text = String(item.getFloatValue())
+                cCell.settingSlider.tag = indexPath.row
+                cCell.settingSlider.addTarget(self, action: #selector(self.sliderChanged), for: .valueChanged)
+                return cCell
+                
+            case .float :
+                let cCell: StandardSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseID, for: indexPath) as! StandardSettingCell
+                cCell.standardValue.text =  "\(item.getFloatValue())"
+                cCell.standardLabel.text = item.textLabel
+                return cCell
+            
+            case .integer :
+               let cCell: StandardSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseID, for: indexPath) as! StandardSettingCell
+               cCell.standardValue.text = "\(item.getIntValue())"
+               cCell.standardLabel.text = item.textLabel
+               return cCell
+            
             default :
-                cCell.SettingValue.text! =  "undefined value"
+                let cCell: StandardSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseID, for: indexPath) as! StandardSettingCell
+                cCell.standardValue.text = item.getStringValue()
+                cCell.standardLabel.text = item.textLabel
+                return cCell
         }
-
-        return cCell
     }
     
     @IBAction func backToMain(_ sender: Any) {

@@ -108,6 +108,8 @@ class SettingsItem: NSObject {
                 self.sVal = settingValue.toggle(val as! Bool)
             case .textParameter:
                 self.sVal = settingValue.textParameter(val as! String)
+            case .slider:
+                self.sVal = settingValue.slider(val as! Float)
             default:
                 self.sVal = settingValue.textParameter("")
         }
