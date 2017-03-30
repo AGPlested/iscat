@@ -17,6 +17,21 @@ func pathOfFitLine(startPt: CGPoint, endPt: CGPoint) -> CGPath {
     return fitBezier.cgPath
 }
 
+func checkIndices (left: Int, right: Int, leftEdge: Int = 0, rightEdge: Int) -> (Int, Int) {
+    var legalLeft = leftEdge
+    var legalRight = rightEdge
+    let legalRange = leftEdge...rightEdge
+    
+    if legalRange.contains(left) {legalLeft = left}
+    else if left > rightEdge {legalLeft = rightEdge}
+    
+    if legalRange.contains(right) {legalRight = right}
+    else if right < leftEdge {legalRight = leftEdge}
+    
+    return (legalLeft, legalRight)
+}
+
+
 func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
     let leftTap = min (Float(firstTouch.x), Float(currentTouch.x))
     let rightTap = max (Float(firstTouch.x), Float(currentTouch.x))
@@ -31,15 +46,8 @@ func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints
     var rightIndex   = Int(Float(rightTap) * dataPointsPerScreenPoint) + kernelHalfWidth
     
     //check for edge here -protect against illegal indices
-    if leftIndex < 0 {leftIndex = 0}
-    if rightIndex < 0 {rightIndex = 0}
     
-    if leftIndex > viewPoints.count {
-        leftIndex = viewPoints.count
-        rightIndex = viewPoints.count
-    }
-    
-    if rightIndex > viewPoints.count {rightIndex = viewPoints.count}
+    (leftIndex, rightIndex) = checkIndices (left: leftIndex, right: rightIndex, leftEdge: 0, rightEdge: viewPoints.count)
     
     let fittingSlice = Array(viewPoints[leftIndex..<rightIndex])
     //shorter than the filtered top hat? Fixed?
@@ -72,14 +80,7 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     var rightIndex  = originalRightIndex + shiftInDataPoints + brim + kernelHalfWidth
     
     //check for edge here -protect against illegal indices
-    if leftIndex < 0 {leftIndex = 0}
-    if rightIndex < 0 {rightIndex = 0; leftIndex = 0}
-    
-    if leftIndex > viewPoints.count {
-        leftIndex = viewPoints.count
-        rightIndex = viewPoints.count
-    }
-    if rightIndex > viewPoints.count {rightIndex = viewPoints.count}
+    (leftIndex, rightIndex) = checkIndices (left: leftIndex, right: rightIndex, leftEdge: 0, rightEdge: viewPoints.count)
     
     print ("lIndex, rIndex: ", leftIndex, rightIndex)
     let slice = Array(viewPoints[leftIndex..<rightIndex])

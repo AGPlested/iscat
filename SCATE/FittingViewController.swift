@@ -114,9 +114,6 @@ class FittingViewController: UIViewController {
         FitView.layer.addSublayer(traceLayer)
     }
     
-
-  
-        
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -151,6 +148,7 @@ class FittingViewController: UIViewController {
                         loc = hitCustom.convert(loc, from: hitCustom.superlayer) // try ? NO? move select/deselect detections to right place
                         //print ("Loc after", loc)
                         //print ("hC.sl,\(hitCustom.superlayer)")
+                        //better for using the thick, invisible outline path
                         if (hitCustom.outlinePath.contains(loc))  {
                             print ("You hit event \(hitCustom.localID!) at \(loc)")
                             let tappedEvent = fitData.list.first(where: {$0.localID == hitCustom.localID!})
@@ -198,7 +196,7 @@ class FittingViewController: UIViewController {
     @IBAction func popUpWasChanged(_ sender: UISegmentedControl, forEvent event: UIEvent) {
         print ("popup changed - delete triggered in this simple case")
         
-        
+        //deleting all selected events from the selected list and the list of fitData
         for selectedEvent in selected.list {
             print (selectedEvent)
             let eventToDelete = selectedEvent.localID!
