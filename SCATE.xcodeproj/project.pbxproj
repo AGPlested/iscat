@@ -130,8 +130,7 @@
 				49BF8FF61E8AC2DA00B218ED /* fittingRoutines.swift */,
 				49E4457C1E81613D00FE5AEA /* dataSelecting.swift */,
 			);
-			name = SCATE;
-			path = ISCAT;
+			path = SCATE;
 			sourceTree = "<group>";
 		};
 		491A7CF21D4CE2040017D238 /* SCATE Tests */ = {
