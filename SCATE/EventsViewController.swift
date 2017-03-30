@@ -91,8 +91,6 @@ class EventsViewController: UIViewController, UITableViewDataSource, UITableView
         cCell.SSD.text = item.SSD
         cCell.backgroundColor = item.color
         // handle the different types of setting value case-by-case
-        
-
 
         return cCell
     }

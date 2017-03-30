@@ -11,7 +11,7 @@ protocol FitViewControllerDelegate {
     func FitVCDidFinish(controller: FittingViewController, touches:Int, fit:eventList)
     }
 
-class FittingViewController: UIViewController {
+class FittingViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     var progressCounter : Float = 0
     var pointsToFit : [Int16] = []
@@ -46,11 +46,11 @@ class FittingViewController: UIViewController {
     var screenPointsPerDataPoint : Float?
     
     // need a container to hold all data from fitData DONE
+    // need to be selectable to move DONE
+    // live RMSD? DONE
     // input to fit algorithm
     // run fitting command
     // store fit command to reproduce
-    // need to be selectable to move
-    // live RMSD? DONE
     // snap?
     // draw grid?
     // live amplitude histogram, markable
@@ -69,6 +69,9 @@ class FittingViewController: UIViewController {
     //want to store this for some events later (Could calculate at the time?)
     
     @IBOutlet weak var console: UITableView!        //console is not used yet
+    let cellReuseIdentifier = "eventCell"
+    var consoleTableRows = [eventTableItem]()
+    
     @IBOutlet weak var FitView: UIView!
     @IBOutlet weak var positionLabel: UILabel!
     
@@ -120,6 +123,14 @@ class FittingViewController: UIViewController {
         fitTraceView()
         positionLabel.text = "Position in trace \(progressCounter) %"
         selectedLabel.text = "Nothing selected"
+        console.dataSource = self
+        console.delegate = self
+        
+        print ("Unpacking contents of eventList to table rows")
+        for event in fitData.list {
+            let eventCellContents = eventTableItem(e: event)
+            consoleTableRows.append (eventCellContents)
+        }
         // Do any additional setup after loading the view.
     }
 
@@ -132,6 +143,34 @@ class FittingViewController: UIViewController {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
+    // console - more or less same code as in EventsViewController
+    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+        return 1
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return consoleTableRows.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cCell: CustomEventCell = tableView.dequeueReusableCell(withIdentifier: cellReuseIdentifier, for: indexPath) as! CustomEventCell
+        let item = consoleTableRows[indexPath.row]
+        cCell.timePt.text =  item.timePt
+        cCell.duration.text =  item.duration
+        cCell.amplitude.text =  item.amplitude
+        cCell.kindOfEvent.text =  item.kOE
+        cCell.SSD.text = item.SSD
+        cCell.backgroundColor = item.color
+        // handle the different types of setting value case-by-case
+        
+        return cCell
+    }
+
+    
+    
+    
+    
     
     @IBAction func drawnFitTap(_ sender: UITapGestureRecognizer) {
         
@@ -212,6 +251,7 @@ class FittingViewController: UIViewController {
             }
             
             //updateLabels
+            
             for cLayer in FitView.layer.sublayers! {
                 print (cLayer)
                 if let customLayer = cLayer as? CustomLayer {
@@ -221,6 +261,7 @@ class FittingViewController: UIViewController {
                     }
                 }
             }
+        console.reloadData()
         selectedLabel.text = selected.consolePrintable() //show empty
         //place a 250 ms delay on the disappearance of the pop-up control
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
@@ -517,6 +558,7 @@ class FittingViewController: UIViewController {
                     }
                 }
             }
+            console.reloadData() //nothing seems to happen yet...
         }
     }
    
