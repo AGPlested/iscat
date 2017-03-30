@@ -78,9 +78,11 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
     func sliderChanged(sender: UISlider ) {
         let item = settingsTableRows[sender.tag]
         item.setValue(val: sender.value)
-        print (item.sVal)
-        //tableView.reloadData()
+        //print (item, item.sVal, localSettings?.panAngleSensitivity)
+        tableView.reloadData()
     }
+    
+    
     // MARK: - Table view data source
     
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {

@@ -129,6 +129,8 @@ class SettingsItem: NSObject {
         switch sVal {
             case .float(let floatValue) :
                 return floatValue
+            case .slider(let sliderValue) :
+                return Double(sliderValue)
             default:
                 return 0
         }
