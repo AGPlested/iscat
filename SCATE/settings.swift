@@ -50,7 +50,7 @@ class SettingsList  {
                                 sValue: .textParameter("Axograph Binary"))
     
     // control of
-    var panAngleSensitivity = SettingsItem(text: "Pan angle",
+    var panAngleSensitivity = SettingsItem(text: "Pan arc",
                                 sValue: .slider(0.5))
     
 }

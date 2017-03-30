@@ -178,9 +178,6 @@ class FittingViewController: UIViewController {
                             
                 
                             //still seems to be selecting below???
-                            
-                            
-                            //selectDONE, deselectDONE, delete, move DONE, show DONE....
 
                             
                         }
@@ -199,7 +196,34 @@ class FittingViewController: UIViewController {
     }
     
     @IBAction func popUpWasChanged(_ sender: UISegmentedControl, forEvent event: UIEvent) {
-        print ("popup changed")
+        print ("popup changed - delete triggered in this simple case")
+        
+        
+        for selectedEvent in selected.list {
+            print (selectedEvent)
+            let eventToDelete = selectedEvent.localID!
+            let rmSelected = selected.removeEventByLocalID(ID: eventToDelete)
+            
+            if rmSelected == true {
+                print ("Removed \(eventToDelete) from selected list.")
+            }
+            
+            let rmFit = fitData.removeEventByLocalID(ID: eventToDelete)
+            if rmFit == true {
+                print ("Removed \(eventToDelete) from fitData list.")
+            }
+            
+            //updateLabels
+            for cLayer in FitView.layer.sublayers! {
+                print (cLayer)
+                if let customLayer = cLayer as? CustomLayer {
+                    if customLayer.localID == eventToDelete {
+                        customLayer.removeFromSuperlayer()
+                        }
+                    }
+                }
+            }
+        selectedLabel.text = selected.consolePrintable() //show empty
         //place a 250 ms delay on the disappearance of the pop-up control
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             self.PopUpControl.isHidden = true

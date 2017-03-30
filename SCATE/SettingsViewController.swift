@@ -110,7 +110,7 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
                 
                 cCell.settingSlider.value = Float(item.getFloatValue())
                 cCell.sliderLabel.text =  item.textLabel
-                cCell.sliderValue.text = String(item.getFloatValue())
+                cCell.sliderValue.text = String(format:"%.2f", item.getFloatValue())
                 cCell.settingSlider.tag = indexPath.row
                 cCell.settingSlider.addTarget(self, action: #selector(self.sliderChanged), for: .valueChanged)
                 return cCell
