@@ -14,7 +14,7 @@ protocol FitViewControllerDelegate {
 class FittingViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     var progressCounter : Float = 0
-    var pointsToFit : [Int16] = []
+    var pointsToFit = [Int16]()
     var delegate: FitViewControllerDelegate? = nil
     var panCount : Int = 0          //not used
     var swipeCount : Int = 0        //never used
@@ -23,8 +23,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     var gaussianPath: CGPath!
     var localCreationID = 0
    
-    var fitEventToStore : Event?
-    //a default container for information picked up a different stages of fitting gestures
+    
     
     let gfit = GaussianFit(filter: 0.05)    //default fc as a function of sample frequency - should be a setting
     
@@ -44,6 +43,17 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     let fitWindow = CGPoint (x: 900, y: 600)
     let viewWidth = CGFloat(900)
     var screenPointsPerDataPoint : Float?
+    let openingsDown : Bool = true
+    var gestureDecision : Bool = false
+    let decisionRadius : CGFloat = 10   //10 point movement during pan before deciding what gesture it is.
+    var panEntry: Entries = .unclassified   //we will check this later - if it's changed during a pan, we know what event we created
+    var decision: Bool = false
+    
+    //a default container for information picked up a different stages of fitting gestures
+    var fitEventToStore : Event?
+
+    
+    
     
     // need a container to hold all data from fitData DONE
     // need to be selectable to move DONE
@@ -64,6 +74,8 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     var firstTapAsDrawn: CGPoint?
     var currentTapAsDrawn: CGPoint?
     var finalTapAsDrawn: CGPoint?
+    
+    var g : PanGestures = .notResolved
     
     var averageY: CGFloat = 0.0
     //want to store this for some events later (Could calculate at the time?)
@@ -271,7 +283,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
         
     }
 
-    //this doesn't do a thing, yet need to frame popup and ask for
+    //this doesn't do a thing, yet need to frame popup and ask for touch outside of that
     @IBAction func touchOutsidePopUpControl(_ sender: Any)  {
         PopUpControl.isHidden = true
     }
@@ -325,24 +337,30 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     }
     
     @IBAction func fit2Pan(_ gesture: UIPanGestureRecognizer) {
+        
+        
         if gesture.state == UIGestureRecognizerState.began {
-            fitEventToStore = Event()   //unclassified at this point
-            //created now so that SSD and color can be updated during gesture
-            fitEventToStore?.fitSSD = worstSSD
-            fitEventToStore?.colorFitSSD = UIColor.red
             
             locationOfBeganTap = gesture.location(in: gesture.view)
             
+            
             if selected.list.isEmpty {
             // create event
+                gestureDecision = false
+                //created now so that SSD and color can be updated during gesture
+                fitEventToStore = Event()   //unclassified at this point
+                fitEventToStore?.fitSSD = worstSSD
+                fitEventToStore?.colorFitSSD = UIColor.red
                 print ("Began one finger pan.", locationOfBeganTap!)
                 localCreationID += 1
                 
+                /* wait to create specific event
                 gaussianPath = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
                 gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
                 gaussianLayer.localID = localCreationID
                 // event created is linked to layer for later
                 FitView.layer.addSublayer(gaussianLayer)
+                */
             }
             else {
             //move selected
@@ -375,13 +393,44 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 
         } else if gesture.state == UIGestureRecognizerState.changed {
             currentLocationOfTap = gesture.location(in: gesture.view)
-            //globally transform to be relative to trace window?
+            //globally transform to be relative to trace window to improve touch?
             
-            let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
+            
+            
+            
             
             if selected.list.isEmpty {
-            // expand event with pan
+                //need to insert selection logic between lines, events and transitions here
                 
+                guard gestureDecision else {
+                    gestureDecision = didEscapePanDecisionLimit(first: locationOfBeganTap, current: currentLocationOfTap, radius: decisionRadius)
+                    return
+                }
+                
+                //we have to make a decision
+                if panEntry == .unclassified {
+                        //no decision was made yet
+                        //arc will be setting adjustable by the user - need to have settings available in this VC for that.
+                        panEntry = panArcEntry(first: locationOfBeganTap, current: currentLocationOfTap, arc: 0.5, openingsDown: true)
+                        
+                        //need to go ahead and create the event now
+                        switch panEntry {
+                            
+                            case .opening, .shutting : //make the top hat event
+                            
+                            case .sojourn   ://make the sojourn event
+                            
+                            case .transition: print("no logic for making a transition yet")
+                            
+                            default print("no logic for making an undefined event")
+                        }
+                    }
+                }
+                
+            
+                }
+                ////start of extending a top Hat event
+                /*
                 let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
                 
                 let lastDrawnFilteredTopHat = gfit.filteredTopHat
@@ -412,11 +461,14 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                                          lineCap: CGLineCap(rawValue: 0)!,
                                                          lineJoin: CGLineJoin(rawValue: 0)!,
                                                          miterLimit: 1) as! CGMutablePath
+            */
+                ////down to here is the updating of the top Hat event for openings and shuttings
+                ////try to excise into function
             
             } else {
                 // some events are selected
                 // move paths around with live SSD
-                // all events are chEvents - therefore references to classes.
+                // all events are references to classes.
                 
                 for (eNum, event) in selected.list.enumerated() {
                     for layer in (gesture.view?.layer.sublayers!)! {
@@ -479,16 +531,16 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 
                                 print (cLayer, updatedFitPoints[0], updatedFitPoints.last!)
                                 
-                                var tempOutlinePath = UIBezierPath()               //use the current points
+                                let tempOutlinePath = UIBezierPath()     //use the current points
                                 tempOutlinePath.move(to: updatedFitPoints[0])
                                 for i in 1 ..< updatedFitPoints.count {
                                     tempOutlinePath.addLine(to: updatedFitPoints[i])
                                     }
 
-                                cLayer.outlinePath = tempOutlinePath.cgPath.copy(strokingWithWidth: 50,
-                                                                                     lineCap: CGLineCap(rawValue: 0)!,
-                                                                                     lineJoin: CGLineJoin(rawValue: 0)!,
-                                                                                     miterLimit: 1) as! CGMutablePath
+                                cLayer.outlinePath = tempOutlinePath.cgPath.copy( strokingWithWidth: 50,
+                                    lineCap: CGLineCap(rawValue: 0)!,
+                                    lineJoin: CGLineJoin(rawValue: 0)!,
+                                    miterLimit: 1) as! CGMutablePath
                                 
                                     
                                 //update with current transform from timePt at the start of the drag.
@@ -498,7 +550,6 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 //update SSD and color for event
                                 event.fitSSD = normalisedSSD
                                 event.colorFitSSD = color
-                            
                                 }
                             }
                         }
@@ -509,7 +560,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
         } else if gesture.state == UIGestureRecognizerState.ended {
             if selected.list.isEmpty {
                 // store new event details
-                    
+                guard panEntry != .unclassified else {return}
                 locationOfEndTap = gesture.location(in: gesture.view)
                 print ("end one finger pan", locationOfEndTap!)
                 

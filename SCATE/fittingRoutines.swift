@@ -8,6 +8,11 @@
 
 import UIKit
 
+enum PanGestures: String {
+    case horizontalPan, verticalPan, downDiag, upDiag, notResolved
+}
+
+
 //whilst pan is updating, make the new line
 func pathOfFitLine(startPt: CGPoint, endPt: CGPoint) -> CGPath {
     let fitBezier = UIBezierPath()
@@ -16,6 +21,105 @@ func pathOfFitLine(startPt: CGPoint, endPt: CGPoint) -> CGPath {
     
     return fitBezier.cgPath
 }
+
+func extendTopHatEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, pointsToFit: [Int16], viewWidth: Int , yPlotOffset: CGFloat, traceHeight: CGFloat, gfit: GaussianFit, gaussianLayer: CustomLayer , fitEventToStore: Event   ) {
+    let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
+    
+    let  screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
+    
+    let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
+    
+    let lastDrawnFilteredTopHat = gfit.filteredTopHat
+    let screenTopHat = lastDrawnFilteredTopHat.map {th in Float(locationOfBeganTap.y) - th}
+    
+    let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
+    
+    let SSD_size = Float(target.count)
+    let normalisedSSD = calculateSSD (A: screenTopHat, B: target) / SSD_size
+    // bad fit is red, good fit is green
+    let color = fitColor(worstSSD : 1e6, currentSSD: normalisedSSD)
+    print (normalisedSSD, color)
+    fitEventToStore.fitSSD = normalisedSSD
+    fitEventToStore.colorFitSSD = color
+    
+    // write out SSD and event length (in samples - convert easily later).
+    
+    // draw the latest curve, colored to previous SSD.
+    CATransaction.begin()
+    CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
+    gaussianLayer.path = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint, firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap)
+    gaussianLayer.drawnPathPoints = gfit.drawnPath
+    gaussianLayer.strokeColor = color.cgColor
+    CATransaction.commit()
+    
+    //will be checked for hits
+    gaussianLayer.outlinePath = gaussianLayer.path!.copy(strokingWithWidth: 60,
+                                                         lineCap: CGLineCap(rawValue: 0)!,
+                                                         lineJoin: CGLineJoin(rawValue: 0)!,
+                                                         miterLimit: 1) as! CGMutablePath
+    return
+}
+
+
+func didEscapePanDecisionLimit (first: CGPoint, current: CGPoint, radius: Float) -> Bool {
+    
+    let dx = Float(first.x - current.x)
+    let dy = Float(first.y - current.y)
+    let distanceFromFirstTouch = pow((pow(dx, 2) + pow(dy,2)),0.5)
+    guard distanceFromFirstTouch < radius else {return true}
+    return false
+}
+
+//wrapper for the panArcGesture decision logic, to give back right event
+func panArcEntry (first: CGPoint, current: CGPoint, arc: Float, openingsDown: Bool) -> (Entries) {
+    var e : Entries = .unclassified
+    let g = panArcGesture(first: first, current: current, arc: arc)
+    
+    switch g {
+    
+    case .downDiag: if openingsDown {e = .opening} else {e = .shutting}
+         //downward movement on screen
+        
+    case .upDiag: if openingsDown {e = .shutting} else {e = .opening}
+        //upward movement on screen
+        
+    case .horizontalPan: e = .sojourn
+        
+    case .verticalPan: e = .transition
+        
+    default: print ("not resolved therefore event not classified")
+    }
+    print (g, e)
+    return e
+}
+
+
+func panArcGesture (first: CGPoint, current: CGPoint, arc: Float) -> (PanGestures) {
+    //arc is the fraction of Pi/4
+    var g : PanGestures = .notResolved
+    let dx = Float(current.x - first.x)
+    let dy = Float(current.y - first.y)
+    
+    let angle = abs(atan(dy / dx))
+    
+    let topHatArcLowBound = Float(.pi / 4.0 * ( 1 - arc ))
+    let topHatArcHighBound = Float (.pi / 4.0 * ( 1 + arc ))
+    
+    if dy > 0 {
+        g = .downDiag
+    } else if dy < 0 {
+        g = .upDiag
+    }
+    
+    if angle < topHatArcLowBound {
+        g = .horizontalPan
+    } else if angle > topHatArcHighBound {
+        g = .verticalPan
+    }
+    
+    return g
+}
+
 
 func checkIndices (left: Int, right: Int, leftEdge: Int = 0, rightEdge: Int) -> (Int, Int) {
     var legalLeft = leftEdge

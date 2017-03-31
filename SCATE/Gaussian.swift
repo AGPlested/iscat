@@ -70,7 +70,7 @@ class GaussianFit {
     let window = CGPoint (x: 400.0, y: 400.0)
     */
     
-    func buildGaussPath (screenPPDP: Float, firstTouch: CGPoint, currentTouch: CGPoint, window:CGPoint) -> CGPath {
+    func buildGaussPath (screenPPDP: Float, firstTouch: CGPoint, currentTouch: CGPoint) -> CGPath {
 
         // **** window **** is not used
         // screenPPDP is the number of screen points per data point - to keep filtering constant
