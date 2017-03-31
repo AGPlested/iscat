@@ -355,11 +355,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 localCreationID += 1
                 
                 /* wait to create specific event
-                gaussianPath = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
-                gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
-                gaussianLayer.localID = localCreationID
-                // event created is linked to layer for later
-                FitView.layer.addSublayer(gaussianLayer)
+                
                 */
             }
             else {
@@ -416,54 +412,38 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                         //need to go ahead and create the event now
                         switch panEntry {
                             
-                            case .opening, .shutting : //make the top hat event
+                            case .opening, .shutting :
+                                //create tophat event
+                                gaussianPath = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
+                                gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
+                                gaussianLayer.localID = localCreationID
+                               
+                                FitView.layer.addSublayer(gaussianLayer)  // event created is linked to layer for later
                             
                             case .sojourn   ://make the sojourn event
                             
                             case .transition: print("no logic for making a transition yet")
                             
-                            default print("no logic for making an undefined event")
+                            default: print("no logic for making an undefined event")
                         }
-                    }
+                } else {
+                    //event was already created, we are now extending it
+                    switch panEntry {
+                        
+                    case .opening, .shutting : extendTopHatEvent(locationOfBeganTap: locationOfBeganTap!, currentLocationOfTap: currentLocationOfTap!, pointsToFit: pointsToFit, viewWidth: viewWidth, yPlotOffset: yPlotOffset, traceHeight: traceHeight, gfit: gfit, gaussianLayer: gaussianLayer , fitEventToStore: fitEventToStore)
+                        
+                    case .sojourn   ://extend the sojourn event
+                        
+                    case .transition: print("no logic for making a transition yet")
+                        
+                    default: print("no logic for making an undefined event")
+
                 }
+                
                 
             
                 }
-                ////start of extending a top Hat event
-                /*
-                let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
-                
-                let lastDrawnFilteredTopHat = gfit.filteredTopHat
-                let screenTopHat = lastDrawnFilteredTopHat.map {th in Float(locationOfBeganTap!.y) - th}
-                
-                let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
         
-                let SSD_size = Float(target.count)
-                let normalisedSSD = calculateSSD (A: screenTopHat, B: target) / SSD_size
-                // bad fit is red, good fit is green
-                let color = fitColor(worstSSD : worstSSD, currentSSD: normalisedSSD)
-                print (normalisedSSD, color)
-                fitEventToStore!.fitSSD = normalisedSSD
-                fitEventToStore!.colorFitSSD = color
-                
-                // write out SSD and event length (in samples - convert easily later).
-                
-                // draw the latest curve, colored to previous SSD.
-                CATransaction.begin()
-                CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
-                gaussianLayer.path = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, window: fitWindow)
-                gaussianLayer.drawnPathPoints = gfit.drawnPath
-                gaussianLayer.strokeColor = color.cgColor
-                CATransaction.commit()
-                
-                //will be checked for hits
-                gaussianLayer.outlinePath = gaussianLayer.path!.copy(strokingWithWidth: 60,
-                                                         lineCap: CGLineCap(rawValue: 0)!,
-                                                         lineJoin: CGLineJoin(rawValue: 0)!,
-                                                         miterLimit: 1) as! CGMutablePath
-            */
-                ////down to here is the updating of the top Hat event for openings and shuttings
-                ////try to excise into function
             
             } else {
                 // some events are selected
