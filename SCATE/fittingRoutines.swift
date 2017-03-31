@@ -22,7 +22,62 @@ func pathOfFitLine(startPt: CGPoint, endPt: CGPoint) -> CGPath {
     return fitBezier.cgPath
 }
 
-func extendTopHatEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, pointsToFit: [Int16], viewWidth: Int , yPlotOffset: CGFloat, traceHeight: CGFloat, gfit: GaussianFit, gaussianLayer: CustomLayer , fitEventToStore: Event   ) {
+func extendLineFit(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, pointsToFit: [Int16], viewWidth: CGFloat, yPlotOffset: CGFloat, traceHeight: CGFloat, fitLine: CustomLayer , fitEventToStore: Event ){
+
+    let  screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
+        //allow the user to correct the Y-position (line remains horizontal)
+    let averageY = (locationOfBeganTap.y + currentLocationOfTap.y) / 2
+    let startPoint = CGPoint(x: (locationOfBeganTap.x)  , y: averageY)
+    let endPoint = CGPoint(x: (currentLocationOfTap.x) , y: averageY)
+
+    //no filter so no kernel
+    let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: 0)
+    let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
+
+
+    // produce the array of points representing the fitLine.
+    let SSD_size = target.count
+
+    let fitLineArray = Array(repeating: Float(averageY), count: SSD_size)
+    let xc = fitLineArray.count
+    let xf = Array(0...xc)
+    //ugly. This logic is performed in the getDataFittingSlice too.
+    let xfs = xf.map {x in Float(x) * screenPointsPerDataPoint + Float(min(locationOfBeganTap.x, currentLocationOfTap.x))}
+
+    var drawnPath = [CGPoint]()
+    for (xp, yp) in zip (xfs,fitLineArray) {
+        let fitLinePoint = CGPoint (x: CGFloat(xp), y: CGFloat(yp))
+        drawnPath.append(fitLinePoint)
+    }
+
+    fitLine.drawnPathPoints = drawnPath
+
+    let normalisedSSD = calculateSSD (A: fitLineArray, B: target) / Float(SSD_size)
+    // bad fit is red, good fit is green
+    let color = fitColor(worstSSD : 1e6, currentSSD: normalisedSSD)
+    //print (normalisedSSD, color)
+    fitEventToStore.fitSSD = normalisedSSD
+    fitEventToStore.colorFitSSD = color
+
+    //no animations
+    //https://github.com/iamdoron/panABallAttachedToALine/blob/master/panLineRotation/ViewController.swift
+    //
+    CATransaction.begin()
+    CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
+    fitLine.path = pathOfFitLine(startPt: startPoint, endPt: endPoint)
+    fitLine.strokeColor = color.cgColor
+    CATransaction.commit()
+
+    //make a copy of the current line with thick path for touch detection later
+    fitLine.outlinePath = fitLine.path!.copy(strokingWithWidth: 50,
+                                             lineCap: CGLineCap(rawValue: 0)!,
+                                             lineJoin: CGLineJoin(rawValue: 0)!,
+                                             miterLimit: 1) as! CGMutablePath
+
+}
+
+
+func extendTopHatEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, pointsToFit: [Int16], viewWidth: CGFloat, yPlotOffset: CGFloat, traceHeight: CGFloat, gfit: GaussianFit, gaussianLayer: CustomLayer , fitEventToStore: Event   ) {
     let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
     
     let  screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
@@ -66,6 +121,7 @@ func didEscapePanDecisionLimit (first: CGPoint, current: CGPoint, radius: Float)
     let dx = Float(first.x - current.x)
     let dy = Float(first.y - current.y)
     let distanceFromFirstTouch = pow((pow(dx, 2) + pow(dy,2)),0.5)
+    print (dx, dy, distanceFromFirstTouch, radius)
     guard distanceFromFirstTouch < radius else {return true}
     return false
 }
@@ -89,7 +145,7 @@ func panArcEntry (first: CGPoint, current: CGPoint, arc: Float, openingsDown: Bo
         
     default: print ("not resolved therefore event not classified")
     }
-    print (g, e)
+    print ("pan Arc entry", g, e)
     return e
 }
 
@@ -116,7 +172,8 @@ func panArcGesture (first: CGPoint, current: CGPoint, arc: Float) -> (PanGesture
     } else if angle > topHatArcHighBound {
         g = .verticalPan
     }
-    
+    //something here is not working right now
+    print ("panArcGesture", g)
     return g
 }
 

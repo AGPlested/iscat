@@ -24,7 +24,6 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     var localCreationID = 0
    
     
-    
     let gfit = GaussianFit(filter: 0.05)    //default fc as a function of sample frequency - should be a setting
     
     var fitData = eventList()               //from Event.swift
@@ -180,10 +179,6 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     }
 
     
-    
-    
-    
-    
     @IBAction func drawnFitTap(_ sender: UITapGestureRecognizer) {
         
         let view = sender.view
@@ -338,25 +333,22 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     
     @IBAction func fit2Pan(_ gesture: UIPanGestureRecognizer) {
         
-        
         if gesture.state == UIGestureRecognizerState.began {
             
             locationOfBeganTap = gesture.location(in: gesture.view)
-            
-            
+
             if selected.list.isEmpty {
             // create event
+                localCreationID += 1
                 gestureDecision = false
+                panEntry = .unclassified
                 //created now so that SSD and color can be updated during gesture
                 fitEventToStore = Event()   //unclassified at this point
                 fitEventToStore?.fitSSD = worstSSD
                 fitEventToStore?.colorFitSSD = UIColor.red
                 print ("Began one finger pan.", locationOfBeganTap!)
-                localCreationID += 1
-                
-                /* wait to create specific event
-                
-                */
+                //wait to create specific event
+            
             }
             else {
             //move selected
@@ -391,37 +383,40 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
             currentLocationOfTap = gesture.location(in: gesture.view)
             //globally transform to be relative to trace window to improve touch?
             
-            
-            
-            
-            
             if selected.list.isEmpty {
                 //need to insert selection logic between lines, events and transitions here
                 
                 guard gestureDecision else {
-                    gestureDecision = didEscapePanDecisionLimit(first: locationOfBeganTap, current: currentLocationOfTap, radius: decisionRadius)
+                    gestureDecision = didEscapePanDecisionLimit(first: locationOfBeganTap!, current: currentLocationOfTap!, radius: Float(decisionRadius))
                     return
                 }
                 
-                //we have to make a decision
+                //we have to set what kind of event it is
                 if panEntry == .unclassified {
-                        //no decision was made yet
+                    
                         //arc will be setting adjustable by the user - need to have settings available in this VC for that.
-                        panEntry = panArcEntry(first: locationOfBeganTap, current: currentLocationOfTap, arc: 0.5, openingsDown: true)
-                        
-                        //need to go ahead and create the event now
+                        panEntry = panArcEntry(first: locationOfBeganTap!, current: currentLocationOfTap!, arc: 0.5, openingsDown: true)
+                    
+                        //create the layer frame for event now
                         switch panEntry {
                             
                             case .opening, .shutting :
                                 //create tophat event
-                                gaussianPath = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!, window: fitWindow)
+                                fitEventToStore?.kindOfEntry = panEntry
+                                gaussianPath = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: locationOfBeganTap!)
                                 gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
                                 gaussianLayer.localID = localCreationID
-                               
                                 FitView.layer.addSublayer(gaussianLayer)  // event created is linked to layer for later
                             
-                            case .sojourn   ://make the sojourn event
+                            case .sojourn   :
+                                fitEventToStore?.kindOfEntry = panEntry
+                                averageY = (locationOfBeganTap?.y)!
+                                //print (String(format:"averageY: %@", averageY))
+                                fitLine = createHorizontalLine(startTap: locationOfBeganTap, endTap: locationOfBeganTap)
+                                fitLine.localID = localCreationID
+                                FitView.layer.addSublayer(fitLine)
                             
+                            //need to fix the consequences of this at the end of the gesture
                             case .transition: print("no logic for making a transition yet")
                             
                             default: print("no logic for making an undefined event")
@@ -430,20 +425,18 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                     //event was already created, we are now extending it
                     switch panEntry {
                         
-                    case .opening, .shutting : extendTopHatEvent(locationOfBeganTap: locationOfBeganTap!, currentLocationOfTap: currentLocationOfTap!, pointsToFit: pointsToFit, viewWidth: viewWidth, yPlotOffset: yPlotOffset, traceHeight: traceHeight, gfit: gfit, gaussianLayer: gaussianLayer , fitEventToStore: fitEventToStore)
+                        case .opening, .shutting : extendTopHatEvent(locationOfBeganTap: locationOfBeganTap!, currentLocationOfTap: currentLocationOfTap!, pointsToFit: pointsToFit, viewWidth: viewWidth, yPlotOffset: yPlotOffset, traceHeight: traceHeight, gfit: gfit, gaussianLayer: gaussianLayer , fitEventToStore: fitEventToStore!)
+                            
+                        case .sojourn : extendLineFit(locationOfBeganTap: locationOfBeganTap!, currentLocationOfTap: currentLocationOfTap!, pointsToFit: pointsToFit, viewWidth: viewWidth, yPlotOffset: yPlotOffset, traceHeight: traceHeight, fitLine: fitLine, fitEventToStore: fitEventToStore!)
                         
-                    case .sojourn   ://extend the sojourn event
-                        
-                    case .transition: print("no logic for making a transition yet")
-                        
-                    default: print("no logic for making an undefined event")
+                            
+                        case .transition: print("no logic for making a transition yet")
+                            
+                        default: print("no logic for making an undefined event")
 
-                }
-                
-                
+                    }
             
                 }
-        
             
             } else {
                 // some events are selected
@@ -456,13 +449,14 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                             if cLayer.localID == event.localID {
                                 print ("dragging custom layer \(cLayer.localID!)")
                                 
+                                var gaussianKernelHalfWidth = Int(gfit.kernel.count / 2)
+                                
+                                if event.kindOfEntry == .sojourn {
+                                    gaussianKernelHalfWidth = 0
+                                }
+                                
                                 //pass initial event to get start of event at start of drag, not the updating event
                                 var targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
-                                
-                                //a bit clumsy to calculate twice and overwrite
-                                if event.kindOfEntry == .sojourn {
-                                    targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: 0)
-                                }
                                 
                                 let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
                                 
@@ -541,6 +535,9 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
             if selected.list.isEmpty {
                 // store new event details
                 guard panEntry != .unclassified else {return}
+                guard panEntry != .transition else {fitEventToStore = Event(); return}
+                //this doesn't work, still stores an uncreated event...
+                
                 locationOfEndTap = gesture.location(in: gesture.view)
                 print ("end one finger pan", locationOfEndTap!)
                 
@@ -550,12 +547,15 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 
                 let graphicalAmplitude = Float((locationOfEndTap?.y)! - (locationOfBeganTap?.y)!)       //no conversion into real world units yet
                 
+                /* we have already decided what kind of event it is
                 if graphicalAmplitude > 0 {
                     fitEventToStore!.kindOfEntry = Entries.opening
                 } else {
                     fitEventToStore!.kindOfEntry = Entries.shutting
                     //this idea doesn't work because shuttings are not negative amp events!
                 }
+                */
+ 
                 // to retrieve event information from list later
                 fitEventToStore!.localID = localCreationID
                 // acccount for reverse (R -> L pan) fits with min and max
@@ -573,7 +573,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 print (fitEventToStore!.printable())
                 fitData.eventAppend(e: fitEventToStore!)
                 //store information in that links this layer to this event and vice versa
-                print (fitEventToStore!.registered!, gaussianLayer.localID!)
+                //print (fitEventToStore!.registered!, gaussianLayer.localID!)
             } else {
                 
                 //finish up with event dragging
@@ -592,88 +592,27 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
             console.reloadData() //nothing seems to happen yet...
         }
     }
-   
+    /*
     @IBAction func fitPan(_ gesture: UIPanGestureRecognizer) {
         
         // recognize pan, draw sojourn line
         if gesture.state == UIGestureRecognizerState.began {
-            fitEventToStore = Event()   //wipe event container 
-            locationOfBeganTap = gesture.location(in: gesture.view)
             
-            //adjust tap
-            //locationOfBeganTap?.x -= 50
-            //locationOfBeganTap?.y -= 50
+
             
-            print ("began two finger pan", locationOfBeganTap!)
-            localCreationID += 1
             
-            averageY = (locationOfBeganTap?.y)!
-            //print (String(format:"averageY: %@", averageY))
-            
-            fitLine = createHorizontalLine(startTap: locationOfBeganTap, endTap: locationOfBeganTap)
-            fitLine.localID = localCreationID
-            FitView.layer.addSublayer(fitLine)
             
             
             
         } else if gesture.state == UIGestureRecognizerState.changed {
             currentLocationOfTap = gesture.location(in: gesture.view)
-            //currentLocationOfTap?.x -= 50
-            //currentLocationOfTap?.y -= 50
+
             
-            //allow the user to correct the Y-position (line remains horizontal)
-            averageY = ((locationOfBeganTap?.y)! + (currentLocationOfTap?.y)!) / 2
-            let startPoint = CGPoint(x: (locationOfBeganTap?.x)!  , y: averageY)
-            let endPoint = CGPoint(x: (currentLocationOfTap?.x)! , y: averageY)
-            
-            //no filter so no kernel
-            let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: 0)
-            let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
-            
-            
-            // produce the array of points representing the fitLine.
-            let SSD_size = target.count
-            
-            let fitLineArray = Array(repeating: Float(averageY), count: SSD_size)
-            let xc = fitLineArray.count
-            let xf = Array(0...xc)
-            //ugly. This logic is performed in the getDataFittingSlice too.
-            let xfs = xf.map {x in Float(x) * screenPointsPerDataPoint! + Float(min((locationOfBeganTap?.x)!, (currentLocationOfTap?.x)!))}
-            
-            var drawnPath = [CGPoint]()
-            for (xp, yp) in zip (xfs,fitLineArray) {
-                let fitLinePoint = CGPoint (x: CGFloat(xp), y: CGFloat(yp))
-                drawnPath.append(fitLinePoint)
-                }
-  
-            fitLine.drawnPathPoints = drawnPath
-            
-            let normalisedSSD = calculateSSD (A: fitLineArray, B: target) / Float(SSD_size)
-            // bad fit is red, good fit is green
-            let color = fitColor(worstSSD : worstSSD, currentSSD: normalisedSSD)
-            //print (normalisedSSD, color)
-            fitEventToStore!.fitSSD = normalisedSSD
-            fitEventToStore!.colorFitSSD = color
-            
-            //no animations
-            //https://github.com/iamdoron/panABallAttachedToALine/blob/master/panLineRotation/ViewController.swift
-            //
-            CATransaction.begin()
-            CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
-            fitLine.path = pathOfFitLine(startPt: startPoint, endPt: endPoint)
-            fitLine.strokeColor = color.cgColor
-            CATransaction.commit()
-            
-            //make a copy of the current line with thick path for touch detection later
-            fitLine.outlinePath = fitLine.path!.copy(strokingWithWidth: 50,
-                                                     lineCap: CGLineCap(rawValue: 0)!,
-                                                     lineJoin: CGLineJoin(rawValue: 0)!,
-                                                     miterLimit: 1) as! CGMutablePath
             
         }
         
         else if gesture.state == UIGestureRecognizerState.ended {
-            
+            /* this is really similar to the end of fit2pan
             // defensive code - Tap must have begun
             if (locationOfBeganTap != nil) {
                 locationOfEndTap = gesture.location(in: gesture.view)
@@ -695,12 +634,12 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 
                 print (fitEventToStore!.printable(), fitEventToStore!.localID!)
                 fitData.eventAppend(e: fitEventToStore!)
-                
+              */
             }
         }
     }
-        
-
+     */
+    /*
         //check for snapping
         
         //if snapping {
@@ -721,7 +660,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
         //     leftExtent.x = originPoint.x
         //     rightExtent.x = currentPoint.x
         //}
-    
+    */
     
     @IBAction func rejectFit(_ sender: Any) {
         print ("Reject button")
