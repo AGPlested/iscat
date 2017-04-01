@@ -13,6 +13,41 @@ enum PanGestures: String {
 }
 
 
+func fitTraceView(FitView: UIView, viewWidth: CGFloat, pointsToFit: [Int16], yOffset: CGFloat, traceHeight: CGFloat) {
+    //draw a fixed data trace on the screen
+    
+    let screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)    //900
+    print ("traceview: pointsTF, sPPDP", pointsToFit.count, screenPointsPerDataPoint)
+    
+    let firstDataPoint = CGPoint(x:0, y:yOffset)
+    var drawnDataPoint : CGPoint
+    
+    FitView.backgroundColor = UIColor.white
+    FitView.translatesAutoresizingMaskIntoConstraints = false
+    
+    //drawing trace
+    let thickness: CGFloat = 2.0
+    let tracePath = UIBezierPath()
+    tracePath.move(to: firstDataPoint)
+    
+    for (index, point) in pointsToFit.enumerated() {
+        let xPoint = CGFloat ( screenPointsPerDataPoint * Float (index) )
+        drawnDataPoint = CGPoint(x: xPoint, y: yOffset + traceHeight * CGFloat(point) / 32536.0)
+        tracePath.addLine(to: drawnDataPoint)
+    }
+    
+    // render to layer
+    let traceLayer = CAShapeLayer()
+    traceLayer.path = tracePath.cgPath
+    traceLayer.lineJoin = kCALineJoinRound
+    traceLayer.strokeColor = UIColor.black.cgColor
+    traceLayer.fillColor = nil
+    traceLayer.lineWidth = thickness
+    FitView.layer.addSublayer(traceLayer)
+
+    return
+}
+
 //whilst pan is updating, make the new line
 func pathOfFitLine(startPt: CGPoint, endPt: CGPoint) -> CGPath {
     let fitBezier = UIBezierPath()
@@ -308,3 +343,26 @@ func fitColor(worstSSD: Float, currentSSD: Float) -> UIColor {
     if val < 0.0 {val = 0.0}    //super safe - val must be between 0 and 1
     return UIColor(red: val, green: 1.0 - val, blue: 0.0, alpha: 1.0)
 }
+
+/*
+ //check for snapping
+ 
+ //if snapping {
+ //  originLevel = nearestLevel(originPoint.y)
+ //  currentLevel = nearestLevel(currentPoint.y)
+ //}
+ //else
+ //{
+ 
+ //if currentPoint.y < originPoint.y {
+ //    **downward
+ //    currentLevel.y = currentPoint.y
+ //    originLevel.y = originPoint.y
+ //    let size.y = ///PIXELS!!! depends on zoom need to think about real units
+ 
+ // }
+ //else {
+ //     leftExtent.x = originPoint.x
+ //     rightExtent.x = currentPoint.x
+ //}
+ */
