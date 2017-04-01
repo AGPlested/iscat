@@ -592,53 +592,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
             console.reloadData() //nothing seems to happen yet...
         }
     }
-    /*
-    @IBAction func fitPan(_ gesture: UIPanGestureRecognizer) {
-        
-        // recognize pan, draw sojourn line
-        if gesture.state == UIGestureRecognizerState.began {
-            
 
-            
-            
-            
-            
-            
-        } else if gesture.state == UIGestureRecognizerState.changed {
-            currentLocationOfTap = gesture.location(in: gesture.view)
-
-            
-            
-        }
-        
-        else if gesture.state == UIGestureRecognizerState.ended {
-            /* this is really similar to the end of fit2pan
-            // defensive code - Tap must have begun
-            if (locationOfBeganTap != nil) {
-                locationOfEndTap = gesture.location(in: gesture.view)
-                //locationOfEndTap?.x -= 50
-                //y is not used
-                
-                print ("end pan", locationOfEndTap!, averageY)
-                fitEventToStore!.kindOfEntry = Entries.sojourn
-                fitEventToStore!.localID = localCreationID
-                // to retrieve event information from list later
-                // acccount for reverse (R -> L pan) fits with min and max
-                let fittedStart = min (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
-                let fittedEnd = max (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
-                
-                //storing screen coordinates right now, will adapt to real world coordinates later
-                fitEventToStore!.timePt = fittedStart
-                fitEventToStore!.amplitude = Double(averageY)
-                fitEventToStore!.duration = fittedEnd - fittedStart
-                
-                print (fitEventToStore!.printable(), fitEventToStore!.localID!)
-                fitData.eventAppend(e: fitEventToStore!)
-              */
-            }
-        }
-    }
-     */
     /*
         //check for snapping
         

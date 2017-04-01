@@ -58,7 +58,7 @@
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="FyE-K9-wXX">
-                                <rect key="frame" x="828" y="36.5" width="56" height="30"/>
+                                <rect key="frame" x="828" y="36" width="56" height="30"/>
                                 <fontDescription key="fontDescription" name="HelveticaNeue" family="Helvetica Neue" pointSize="15"/>
                                 <state key="normal" title="Zoom In">
                                     <color key="titleColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
@@ -546,7 +546,6 @@
                                     <constraint firstItem="Ls5-le-KgW" firstAttribute="centerY" secondItem="Q0O-dx-6CW" secondAttribute="centerY" id="mUx-50-FeH"/>
                                 </constraints>
                                 <connections>
-                                    <outletCollection property="gestureRecognizers" destination="OMN-Ji-Qkd" appends="YES" id="g4D-da-w5n"/>
                                     <outletCollection property="gestureRecognizers" destination="aya-eI-gmJ" appends="YES" id="bvg-o4-NH0"/>
                                     <outletCollection property="gestureRecognizers" destination="535-yT-Dw2" appends="YES" id="ltS-Md-cen"/>
                                     <outletCollection property="gestureRecognizers" destination="qye-jz-UqI" appends="YES" id="0uM-bf-F3C"/>
@@ -625,11 +624,6 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="fgE-OJ-sE6" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <panGestureRecognizer minimumNumberOfTouches="2" maximumNumberOfTouches="2" id="OMN-Ji-Qkd">
-                    <connections>
-                        <action selector="fitPan:" destination="6Sd-DR-cLT" id="Iz6-cV-TyM"/>
-                    </connections>
-                </panGestureRecognizer>
                 <panGestureRecognizer minimumNumberOfTouches="1" maximumNumberOfTouches="1" id="aya-eI-gmJ">
                     <connections>
                         <action selector="fit2Pan:" destination="6Sd-DR-cLT" id="IkW-0O-urN"/>
