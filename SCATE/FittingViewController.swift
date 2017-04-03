@@ -180,9 +180,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                             
                             //should be a function to update labels/console
                             selectedLabel.text = selected.consolePrintable(title: "Selected")
-                            
-                            
-                
+                 
                             //still seems to be selecting below???
 
                             

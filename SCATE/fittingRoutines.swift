@@ -289,12 +289,13 @@ func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints
 }
 
 func getSliceForStepDrag (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
+    
+    //this is way too simplistic right now - have to calculate in detailllll
     let baseTap = min (Float(firstTouch.y), Float(currentTouch.y))
     let finalTap = max (Float(firstTouch.y), Float(currentTouch.y))
     
     //normalizing by view width (viewW) removes the need to scale
     //indices are extended by the half-width of the Gaussian filtering kernel.
-    //Zero if it's just a line.
     
     let dataPointsPerScreenPoint = Float(viewPoints.count) / viewW
     let ears = max (Int((finalTap - baseTap) / 5), 3)

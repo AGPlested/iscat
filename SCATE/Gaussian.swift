@@ -36,7 +36,8 @@ class GaussianFit {
     
     func step (height: Float, back: Bool) -> [Float] {
         //let h = height
-        let ears = max (abs(Int(height / 5)), 3) //always draw something, even at small heights
+        //with these strange parameters, the dragged out step looks good.
+        let ears = max ((Int(pow (abs(height), 0.7))), 25) //always draw something, even at small heights
         print ("ears \(ears)")
         let stepTo = Array<Float>(repeating: height, count: ears)
         let stepBase = Array<Float>(repeating: 0, count: ears)
@@ -103,11 +104,22 @@ class GaussianFit {
         filteredStep = filterConvolution(x: stepInput, k: kernel)
         
         //trim step
-        let extraBits = Int(filteredStep.count / 5) //this is totally rough
-        let filteredStepTrimmed = filteredStep[extraBits...(filteredStep.count - extraBits)]
+        //var filteredStepTrimmed = [Float]()
         
-        let fringe =  Float(stepInput.count) * screenPPDP / 2
-        //need to move drawn curve left in x by this much.
+        //narrow step default
+        var leftTrimPoint = Int(Float(filteredStep.count) * 0.4)
+        var rightTrimPoint = Int(Float(filteredStep.count) * 0.6)
+        
+        //wide step limit (adding a couple of points beyond the kernel
+        if filteredStep.count > 2 * kernel.count {
+            leftTrimPoint = filteredStep.count / 2 - kernel.count / 2 - 10
+            rightTrimPoint = filteredStep.count / 2 + kernel.count / 2 + 10
+        }
+        
+        let filteredStepTrimmed = filteredStep[leftTrimPoint...rightTrimPoint]
+        
+        let fringe =  Float(filteredStepTrimmed.count) * screenPPDP / 2
+        //need to move drawn curve left in x by this much^^^ way too much
         let xc = filteredStepTrimmed.count
         let xf = Array(0...xc)
         let xfs = xf.map {x in Float(x) * screenPPDP}
