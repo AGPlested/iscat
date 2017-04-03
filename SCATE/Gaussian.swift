@@ -14,6 +14,7 @@ class GaussianFit {
 
     var drawnPath = [CGPoint]()
     var filteredTopHat = [Float]()
+    var filteredStep = [Float]()
     var kernel = [Float]()                  //the filter kernel
     
     init(filter: Float) {
@@ -31,6 +32,20 @@ class GaussianFit {
         let xPadded = xPad + x + xPad
         vDSP_conv(xPadded, 1, kEnd, -1, &result, 1, vDSP_Length(resultSize), vDSP_Length(k.count))
         return result
+    }
+    
+    func step (height: Float, back: Bool) -> [Float] {
+        //let h = height
+        let ears = max (abs(Int(height / 5)), 3) //always draw something, even at small heights
+        print ("ears \(ears)")
+        let stepTo = Array<Float>(repeating: height, count: ears)
+        let stepBase = Array<Float>(repeating: 0, count: ears)
+        
+        if back == true {
+            return stepTo + stepBase
+        } else {
+            return stepBase + stepTo
+        }
     }
     
     func topHat (width: Int, height: Float) -> [Float] {
@@ -56,7 +71,7 @@ class GaussianFit {
         
         let sigma = 0.132505 / fc           // equation A11 Chapter 19 Blue Book (Neher and Sakmann).
         let width = 2 * Int (4 * sigma)     // 2 * nc, Swift rounds down
-        let k = [Int](0...width)            // zero bias in creation == +1
+        let k = [Int](0...width)            // zero bias in creation => +1
         let mu = Float(width) / 2.0
         let rawKernel : [Float] = k.map { k in gaussian (x: Float(k), a: 1, b: mu, c: sigma) }
         let sum = rawKernel.reduce(0, +)
@@ -70,9 +85,52 @@ class GaussianFit {
     let window = CGPoint (x: 400.0, y: 400.0)
     */
     
+    func buildGaussStepPath (screenPPDP: Float, firstTouch: CGPoint, currentTouch: CGPoint) -> CGPath {
+        
+        // screenPPDP is the number of screen points per data point - to keep filtering constant
+        // float for maths later
+        let position = Float(firstTouch.x)
+        let base = Float(firstTouch.y)
+        let amp = Float(firstTouch.y - currentTouch.y)
+        var back = false
+
+        if firstTouch.x > currentTouch.x {
+            back = true
+        }
+        
+        let stepInput = step(height: amp, back: back)
+        
+        filteredStep = filterConvolution(x: stepInput, k: kernel)
+        
+        //trim step
+        let extraBits = Int(filteredStep.count / 5) //this is totally rough
+        let filteredStepTrimmed = filteredStep[extraBits...(filteredStep.count - extraBits)]
+        
+        let fringe =  Float(stepInput.count) * screenPPDP / 2
+        //need to move drawn curve left in x by this much.
+        let xc = filteredStepTrimmed.count
+        let xf = Array(0...xc)
+        let xfs = xf.map {x in Float(x) * screenPPDP}
+        let gaussPath = UIBezierPath()
+        
+        let firstPoint = CGPoint (x: CGFloat(position - fringe), y: CGFloat(base))
+        //draw left to right
+        gaussPath.move(to: firstPoint)
+        
+        drawnPath = []
+        for (xp, yp) in zip(xfs, filteredStepTrimmed) {
+            let gaussPoint = CGPoint (x:Double(position - fringe + xp), y:Double(base - yp))
+            gaussPath.addLine(to: gaussPoint)
+            drawnPath.append(gaussPoint)
+        }
+        
+        print ("drawnPath", drawnPath)
+        return gaussPath.cgPath
+    }
+    
+    
     func buildGaussPath (screenPPDP: Float, firstTouch: CGPoint, currentTouch: CGPoint) -> CGPath {
 
-        // **** window **** is not used
         // screenPPDP is the number of screen points per data point - to keep filtering constant
         // float for maths later
         let leftExtreme = Float(min(firstTouch.x, currentTouch.x))
@@ -128,11 +186,4 @@ class GaussianFit {
 
 
 
-/*
- func createGaussianArray (mu: Float = 0.5) -> ([Float], [Float]) {
- //arbitrary choice of width.
- xf = x.map {x in Float(x) / 100}
- gaussArray = xf.map { xf in gaussian (x: xf, a: 1,b: mu,c: 10) }
- return (xf, gaussArray)
- }
- */
+

@@ -112,6 +112,44 @@ func extendLineFit(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, p
 }
 
 
+func extendStepEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, pointsToFit: [Int16], viewWidth: CGFloat, yPlotOffset: CGFloat, traceHeight: CGFloat, gfit: GaussianFit, gaussianLayer: CustomLayer, fitEventToStore: Event ) {
+    let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
+    
+    let  screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
+    
+    let targetDataPoints = getSliceForStepDrag(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
+    
+    let lastDrawnFilteredStep = gfit.filteredStep
+    let screenStep = lastDrawnFilteredStep.map {th in Float(locationOfBeganTap.y) - th}
+    
+    let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
+    
+    let SSD_size = Float(target.count)
+    let normalisedSSD = calculateSSD (A: screenStep, B: target) / SSD_size
+    // bad fit is red, good fit is green
+    let color = fitColor(worstSSD : 1e6, currentSSD: normalisedSSD)
+    print (normalisedSSD, color)
+    fitEventToStore.fitSSD = normalisedSSD
+    fitEventToStore.colorFitSSD = color
+    
+    // write out SSD and event length (in samples - convert easily later).
+    
+    // draw the latest curve, colored to previous SSD.
+    CATransaction.begin()
+    CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
+    gaussianLayer.path = gfit.buildGaussStepPath(screenPPDP: screenPointsPerDataPoint, firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap)
+    gaussianLayer.drawnPathPoints = gfit.drawnPath
+    gaussianLayer.strokeColor = color.cgColor
+    CATransaction.commit()
+    
+    //will be checked for hits
+    gaussianLayer.outlinePath = gaussianLayer.path!.copy(strokingWithWidth: 60,
+                                                         lineCap: CGLineCap(rawValue: 0)!,
+                                                         lineJoin: CGLineJoin(rawValue: 0)!,
+                                                         miterLimit: 1) as! CGMutablePath
+    return
+}
+
 func extendTopHatEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, pointsToFit: [Int16], viewWidth: CGFloat, yPlotOffset: CGFloat, traceHeight: CGFloat, gfit: GaussianFit, gaussianLayer: CustomLayer , fitEventToStore: Event   ) {
     let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
     
@@ -249,6 +287,30 @@ func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints
     //shorter than the filtered top hat? Fixed?
     return fittingSlice
 }
+
+func getSliceForStepDrag (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
+    let baseTap = min (Float(firstTouch.y), Float(currentTouch.y))
+    let finalTap = max (Float(firstTouch.y), Float(currentTouch.y))
+    
+    //normalizing by view width (viewW) removes the need to scale
+    //indices are extended by the half-width of the Gaussian filtering kernel.
+    //Zero if it's just a line.
+    
+    let dataPointsPerScreenPoint = Float(viewPoints.count) / viewW
+    let ears = max (Int((finalTap - baseTap) / 5), 3)
+    
+    var leftIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) - ears
+    var rightIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) + ears
+    
+    //check for edge here -protect against illegal indices
+    
+    (leftIndex, rightIndex) = checkIndices (left: leftIndex, right: rightIndex, leftEdge: 0, rightEdge: viewPoints.count)
+    
+    let fittingSlice = Array(viewPoints[leftIndex..<rightIndex])
+    //shorter than the filtered top hat? Fixed?
+    return fittingSlice
+}
+
 
 func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEvent, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
     
