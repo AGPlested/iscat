@@ -231,7 +231,14 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                     }
                 }
             }
-        //update console for live ev
+        //update console for fitted events - flat repopulation: no animation
+        consoleTableRows = []
+        for event in fitData.list {
+            let eventForConsole = eventTableItem(e: event)
+            consoleTableRows.append (eventForConsole)
+        }
+        console.reloadData()
+        
         
         
         selectedLabel.text = selected.consolePrintable() //show empty
