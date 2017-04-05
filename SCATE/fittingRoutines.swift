@@ -117,7 +117,7 @@ func extendStepEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint,
     
     let  screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
     
-    let targetDataPoints = getSliceForStepDrag(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
+    let targetDataPoints = getStepSliceExtending(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
     
     let lastDrawnFilteredStep = gfit.filteredStep
     let screenStep = lastDrawnFilteredStep.map {th in Float(locationOfBeganTap.y) - th}
@@ -288,7 +288,7 @@ func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints
     return fittingSlice
 }
 
-func getSliceForStepDrag (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
+func getStepSliceExtending (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
     
     //this is way too simplistic right now - have to calculate in detailllll
     let baseTap = min (Float(firstTouch.y), Float(currentTouch.y))
@@ -333,8 +333,15 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
         brim = Int(e.duration! * pPSP / 5)        //brim of the top hat function is 1/5 of its hat width. should really call back to original function to check this.
     }
     
+    //brim will be zero for a transition because duration = 0
+    if e.duration == 0 {
+        brim = 10
+    }
+    
     let shiftInDataPoints = Int((currentDragX - startDragX) * pPSP ) //will be +ve if drag is to the right, screen points scaled to data points
     print ("sIDP, pPSP, brim, kHW, OLI, ORI", shiftInDataPoints, pPSP , brim, kernelHalfWidth, originalLeftIndex, originalRightIndex)
+    
+    //these will be wrong for transition
     var leftIndex   = originalLeftIndex + shiftInDataPoints - brim - kernelHalfWidth
     var rightIndex  = originalRightIndex + shiftInDataPoints + brim + kernelHalfWidth
     

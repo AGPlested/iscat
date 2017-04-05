@@ -24,6 +24,8 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     var progressCounter : Float = 0
     var pointsToFit = [Int16]()
     
+    var settings : SettingsList!
+    
     var fitLine: CustomLayer!               //sojourns
     
     var gaussianLayer: CustomLayer!         //gaussian filtered events
@@ -180,7 +182,8 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                             
                             //should be a function to update labels/console
                             selectedLabel.text = selected.consolePrintable(title: "Selected")
-                 
+                            
+                            
                             //still seems to be selecting below???
 
                             
@@ -228,7 +231,9 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                     }
                 }
             }
-        console.reloadData()
+        //update console for live ev
+        
+        
         selectedLabel.text = selected.consolePrintable() //show empty
         //place a 250 ms delay on the disappearance of the pop-up control
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
@@ -355,8 +360,9 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 //if decision was made the we have to set what kind of event it is
                 if panEntry == .unclassified {
                     
-                        //arc will be setting adjustable by the user - need to have settings available in this VC for that.
-                        panEntry = panArcEntry(first: locationOfBeganTap!, current: currentLocationOfTap!, arc: 0.3, openingsDown: true)
+                        // arc value between 0 (diagonal pan off) and 1 (only diag pan)
+                        let arc = Float(settings.panAngleSensitivity.getFloatValue())
+                        panEntry = panArcEntry(first: locationOfBeganTap!, current: currentLocationOfTap!, arc: arc, openingsDown: true)
                     
                         fitEventToStore?.kindOfEntry = panEntry
                         //create the layer frame for event
@@ -422,12 +428,9 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                     gaussianKernelHalfWidth = 0
                                 }
                                 
-                                if event.kindOfEntry == .transition {
-                                    targetDataPoints = getSliceForStepDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
-                                } else {
-                                    //pass initial event to get start of event at start of drag, not the updating event
-                                    targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
-                                }
+                                //pass initial event to get start of event at start of drag, not the updating event
+                                targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
+                               
                                 
                                 let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
                                 
@@ -538,7 +541,8 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 print (fitEventToStore!.printable())
                 fitData.eventAppend(e: fitEventToStore!)
                 //store information in that links this layer to this event and vice versa
-            
+                
+                
             } else {
                 
                 //finish up with event dragging
@@ -547,10 +551,16 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                         if let cLayer = layer as? CustomLayer {
                             if cLayer.localID == event.localID {
                                 print ("Finished dragging event \(String(describing: cLayer.localID))")
+                                
                             }
                         }
                     }
                 }
+            }
+            consoleTableRows = []
+            for event in fitData.list {
+                let eventForConsole = eventTableItem(e: event)
+                consoleTableRows.append (eventForConsole)
             }
             console.reloadData() //nothing seems to happen yet...
         }

@@ -356,6 +356,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             if let destinationVC = segue.destination as? FittingViewController {
                 destinationVC.progressCounter = self.progress
                 //progress excludes the header
+                destinationVC.settings = s
                 let dataLength = Float(traceLength!) - Float(s.header.getIntValue())
                 // this is not scaled
                 let leftPoint = s.header.getIntValue() + Int(self.progress / 100 * dataLength)
