@@ -1,12 +1,14 @@
 //
-//  simplex_pef_tests.swift
+//  testAll.swift
 //  SCATE
 //
 //  Created by Andrew on 06/04/2017.
 //  Copyright © 2017 Andrew. All rights reserved.
 //
-import Foundation
-import Darwin
+
+import XCTest
+
+@testable import SCATE
 
 let tests: [(tableau: [[Float]], solution: [Float])] = [
     (
@@ -71,14 +73,35 @@ func equalApprox(_ a: [Float], _ b: [Float]) -> Bool {
         !a.enumerated().contains { index, value in !equalApprox(value, b[index]) }
 }
 
-class simplexTests: XCTestCase {
+class testAll: XCTestCase {
     
-    func testAll () {
+    override func setUp() {
+        super.setUp()
+        // Put setup code here. This method is called before the invocation of each test method in the class.
+    }
+    
+    override func tearDown() {
+        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        super.tearDown()
+    }
+    
+    func testExample() {
         for test in tests {
             let solution = maximize(test.tableau)
-            XCTAssertEqual(solution, test.solution, "For test tableau \(test.tableau), expected solution to be \(test.solution), " + "but was \(solution)")
+            guard equalApprox(solution, test.solution) else {
+                print("For test tableau \(test.tableau), expected solution to be \(test.solution), " +
+                    "but was \(solution)")
+                exit(1)
+            }
+        }
+
+    }
+    
+    func testPerformanceExample() {
+        // This is an example of a performance test case.
+        self.measure {
+            // Put the code you want to measure the time of here.
         }
     }
+    
 }
-
-

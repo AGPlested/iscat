@@ -11,7 +11,7 @@ import Foundation
 // maximize returns a solution that maximizes the objective function of a linear program described
 // by a canonical tableau. The first element of the solution is the output of the objective
 // function, and the next elements are the values of each variable.
-public func maximize(_ tableau: [[Float]]) -> [Float] {
+func maximize(_ tableau: [[Float]]) -> [Float] {
     var tab = tableau
     
     // Pivot the tableau repeatedly until the solution is optimal.

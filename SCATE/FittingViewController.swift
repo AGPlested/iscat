@@ -157,11 +157,11 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                     
                         //print ("Loc before", loc)
                         //this gets flaky and mixed up after awhile
-                        loc = hitCustom.convert(loc, from: hitCustom.superlayer) // try ? NO? move select/deselect detections to right place
+                        let locConverted = hitCustom.convert(loc, from: hitCustom.superlayer) // try ? NO? move select/deselect detections to right place
                         //print ("Loc after", loc)
                         //print ("hC.sl,\(hitCustom.superlayer)")
                         //better for using the thick, invisible outline path
-                        if (hitCustom.outlinePath.contains(loc))  {
+                        if (hitCustom.outlinePath.contains(loc)) || (hitCustom.outlinePath.contains(locConverted))   {
                             print ("You hit event \(hitCustom.localID!) at \(loc)")
                             eventTapped = true  //flag in case the tap was on nothing
                             let tappedEvent = fitData.list.first(where: {$0.localID == hitCustom.localID!})
@@ -191,28 +191,28 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                         }
                     }
                 }
-            }
-            if eventTapped != true {
-                //tapped on empty space so clear selection
-                for event in selected.list {
-                    let eventID = event.localID
-                    
-                    //search through all possible layers for the one with eventID
-                    for layer in hitting.sublayers!{
-                        if let missedCustom = layer as? CustomLayer {
-                            if missedCustom.localID == eventID {
-                        //find relevant layer and fix thick/opacity
-                                CATransaction.begin()
-                                missedCustom.lineWidth = 5.0
-                                missedCustom.opacity = 1
-                                CATransaction.commit()
+           
+                if eventTapped != true {
+                    //tapped on empty space so clear selection
+                    for event in selected.list {
+                        let eventID = event.localID
+                        
+                        //search through all possible layers for the one with eventID
+                        for layer in hitting.sublayers!{
+                            if let missedCustom = layer as? CustomLayer {
+                                if missedCustom.localID == eventID {
+                            //find relevant layer and fix thick/opacity
+                                    CATransaction.begin()
+                                    missedCustom.lineWidth = 5.0
+                                    missedCustom.opacity = 1
+                                    CATransaction.commit()
+                                }
                             }
                         }
+                        //remove from the selected list
+                        selected.removeEventByLocalID(ID: eventID!)
+                        print ("Deselected event \(eventID!)")
                     }
-                    //remove from the selected list
-                    selected.removeEventByLocalID(ID: eventID!)
-                    print ("Deselected event \(eventID!)")
-                    
                 }
             }
             selectedLabel.text = selected.consolePrintable(title: "Selected")
@@ -467,8 +467,8 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 for point in cLayer.drawnPathPoints {
                                     fitPoints.append(Float(point.y))
                                 }
-                                print ("dPPx0: ", cLayer.drawnPathPoints[0])
-                                print ("event start x:", event.timePt - event.duration! / 5 - Float(gaussianKernelHalfWidth) * screenPointsPerDataPoint!)
+                                //print ("dPPx0: ", cLayer.drawnPathPoints[0])
+                                //print ("event start x:", event.timePt - event.duration! / 5 - Float(gaussianKernelHalfWidth) * screenPointsPerDataPoint!)
                                 
                                 //calculate SSD
                                 let SSD_size = Float(target.count)
@@ -476,7 +476,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 let normalisedSSD = calculateSSD (A: fitPoints, B: target) / SSD_size
                                 // bad fit is red, good fit is green
                                 let color = fitColor(worstSSD : worstSSD, currentSSD: normalisedSSD)
-                                print ("SSD, col, fitLen, targLen: ", normalisedSSD, color, fitPoints.count, target.count)
+                                //print ("SSD, col, fitLen, targLen: ", normalisedSSD, color, fitPoints.count, target.count)
 
                                 //form translation for the path
                                 let originalTransform = selectedTransforms[cLayer.localID!]
@@ -484,7 +484,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 // taps are within the layer so relative calculations not needed.
                                 let tx = (currentLocationOfTap!.x - locationOfBeganTap!.x + originalTransform!.m41)
                                 let ty = (currentLocationOfTap!.y - locationOfBeganTap!.y + originalTransform!.m42)
-                                print ("ctn \(tx,ty,originalTransform!.m41, originalTransform!.m42)")
+                                //print ("ctn \(tx,ty,originalTransform!.m41, originalTransform!.m42)")
                                 let newTransform = CATransform3DMakeTranslation(tx, ty, 0)
                                 
                                 //translate and update SSD color code
@@ -506,19 +506,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 
                                 cLayer.drawnPathPoints = updatedFitPoints   //the current points for the next round of SSD
                                 
-                                //print (cLayer, updatedFitPoints[0], updatedFitPoints.last!)
-                                
-                                let tempOutlinePath = UIBezierPath()     //use the current points to create fat outline layer
-                                tempOutlinePath.move(to: updatedFitPoints[0])
-                                for i in 1 ..< updatedFitPoints.count {
-                                    tempOutlinePath.addLine(to: updatedFitPoints[i])
-                                    }
-
-                                //store the outline path
-                                cLayer.outlinePath = tempOutlinePath.cgPath.copy( strokingWithWidth: 50,
-                                    lineCap: CGLineCap(rawValue: 0)!,
-                                    lineJoin: CGLineJoin(rawValue: 0)!,
-                                    miterLimit: 1) as! CGMutablePath
+                                //moved outline drawing down to once only at the end because dragging complicated paths (tophats) was laggy
                                 
                                 //update with current transform from timePt at the start of the drag.
                                 let savedEvent = selectedEvents[cLayer.localID!]
@@ -580,6 +568,21 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                             if cLayer.localID == event.localID {
                                 print ("Finished dragging event \(String(describing: cLayer.localID))")
                                 
+                                //use the last drawn points to recreate the invisible fat outline layer
+                                //for selection so must only be done once, at the end of the drag
+                                //considerable lagginess when done at each step.
+                                let finalFitPoints = cLayer.drawnPathPoints
+                                let tempOutlinePath = UIBezierPath()
+                                tempOutlinePath.move(to: finalFitPoints[0])
+                                for i in 1 ..< finalFitPoints.count {
+                                    tempOutlinePath.addLine(to: finalFitPoints[i])
+                                }
+                                //store the outline path
+                                cLayer.outlinePath = tempOutlinePath.cgPath.copy( strokingWithWidth: 50,
+                                                                                  lineCap: CGLineCap(rawValue: 0)!,
+                                                                                  lineJoin: CGLineJoin(rawValue: 0)!,
+                                                                                  miterLimit: 1) as! CGMutablePath
+
                             }
                         }
                     }

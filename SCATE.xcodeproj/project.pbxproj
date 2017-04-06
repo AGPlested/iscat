@@ -14,7 +14,6 @@
 		491A7CE41D4CE2030017D238 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 491A7CE21D4CE2030017D238 /* Main.storyboard */; };
 		491A7CE61D4CE2030017D238 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 491A7CE51D4CE2030017D238 /* Assets.xcassets */; };
 		491A7CE91D4CE2030017D238 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 491A7CE71D4CE2030017D238 /* LaunchScreen.storyboard */; };
-		491A7CF41D4CE2040017D238 /* ISCATTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491A7CF31D4CE2040017D238 /* ISCATTests.swift */; };
 		491A7D011D4D06510017D238 /* TraceIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491A7D001D4D06510017D238 /* TraceIO.swift */; };
 		491E127D1E6DA289004A1EE2 /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491E127C1E6DA289004A1EE2 /* Event.swift */; };
 		492304F71E796E4800C2A439 /* CustomCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = 492304F61E796E4800C2A439 /* CustomCells.swift */; };
@@ -27,8 +26,8 @@
 		498E2F321E729E2E00BBB0D8 /* settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498E2F311E729E2E00BBB0D8 /* settings.swift */; };
 		49BF8FF71E8AC2DA00B218ED /* fittingRoutines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49BF8FF61E8AC2DA00B218ED /* fittingRoutines.swift */; };
 		49C8B5431E69A02D005455CB /* Gaussian.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49C8B5421E69A02D005455CB /* Gaussian.swift */; };
+		49F35CD11E96A29800D9BED3 /* testAll.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F35CD01E96A29800D9BED3 /* testAll.swift */; };
 		49F90FB01E969A70002C3F8A /* simplex_pef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F90FAF1E969A70002C3F8A /* simplex_pef.swift */; };
-		49F90FB21E969AAC002C3F8A /* simplex_pef_tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F90FB11E969AAC002C3F8A /* simplex_pef_tests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,7 +51,6 @@
 		491A7CE81D4CE2030017D238 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		491A7CEA1D4CE2030017D238 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		491A7CEF1D4CE2040017D238 /* SCATETests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SCATETests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		491A7CF31D4CE2040017D238 /* ISCATTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISCATTests.swift; sourceTree = "<group>"; };
 		491A7CF51D4CE2040017D238 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		491A7D001D4D06510017D238 /* TraceIO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TraceIO.swift; sourceTree = "<group>"; };
 		491E127C1E6DA289004A1EE2 /* Event.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
@@ -66,8 +64,8 @@
 		498E2F311E729E2E00BBB0D8 /* settings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = settings.swift; sourceTree = "<group>"; };
 		49BF8FF61E8AC2DA00B218ED /* fittingRoutines.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = fittingRoutines.swift; sourceTree = "<group>"; };
 		49C8B5421E69A02D005455CB /* Gaussian.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Gaussian.swift; sourceTree = "<group>"; };
+		49F35CD01E96A29800D9BED3 /* testAll.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = testAll.swift; path = SCATETests/testAll.swift; sourceTree = "<group>"; };
 		49F90FAF1E969A70002C3F8A /* simplex_pef.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = simplex_pef.swift; sourceTree = "<group>"; };
-		49F90FB11E969AAC002C3F8A /* simplex_pef_tests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = simplex_pef_tests.swift; path = ../SCATETests/simplex_pef_tests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,6 +91,7 @@
 		491A7CD21D4CE2030017D238 = {
 			isa = PBXGroup;
 			children = (
+				49F35CD01E96A29800D9BED3 /* testAll.swift */,
 				491A7CDD1D4CE2030017D238 /* SCATE */,
 				491A7CF21D4CE2040017D238 /* SCATE Tests */,
 				491A7CDC1D4CE2030017D238 /* Products */,
@@ -138,8 +137,6 @@
 		491A7CF21D4CE2040017D238 /* SCATE Tests */ = {
 			isa = PBXGroup;
 			children = (
-				49F90FB11E969AAC002C3F8A /* simplex_pef_tests.swift */,
-				491A7CF31D4CE2040017D238 /* ISCATTests.swift */,
 				491A7CF51D4CE2040017D238 /* Info.plist */,
 			);
 			name = "SCATE Tests";
@@ -279,7 +276,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				49F90FB21E969AAC002C3F8A /* simplex_pef_tests.swift in Sources */,
 				49C8B5431E69A02D005455CB /* Gaussian.swift in Sources */,
 				4964D7E91E7198F500078EF9 /* FittingViewController.swift in Sources */,
 				49F90FB01E969A70002C3F8A /* simplex_pef.swift in Sources */,
@@ -301,7 +297,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				491A7CF41D4CE2040017D238 /* ISCATTests.swift in Sources */,
+				49F35CD11E96A29800D9BED3 /* testAll.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -378,6 +374,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = 2;
 			};
 			name = Debug;
@@ -418,6 +415,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = 2;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -435,7 +433,7 @@
 				);
 				INFOPLIST_FILE = SCATE/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "de.FMP-Berlin.ISCAT";
+				PRODUCT_BUNDLE_IDENTIFIER = "de.FMP-Berlin.SCATE";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				SWIFT_VERSION = 3.0;
@@ -454,7 +452,7 @@
 				);
 				INFOPLIST_FILE = SCATE/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "de.FMP-Berlin.ISCAT";
+				PRODUCT_BUNDLE_IDENTIFIER = "de.FMP-Berlin.SCATE";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				SWIFT_VERSION = 3.0;
@@ -465,9 +463,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				INFOPLIST_FILE = ISCATTests/Info.plist;
+				INFOPLIST_FILE = SCATETests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "de.FMP-Berlin.ISCATTests";
+				PRODUCT_BUNDLE_IDENTIFIER = "de.FMP-Berlin.SCATETests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SCATE.app/SCATE";
@@ -478,9 +476,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				INFOPLIST_FILE = ISCATTests/Info.plist;
+				INFOPLIST_FILE = SCATETests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "de.FMP-Berlin.ISCATTests";
+				PRODUCT_BUNDLE_IDENTIFIER = "de.FMP-Berlin.SCATETests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SCATE.app/SCATE";

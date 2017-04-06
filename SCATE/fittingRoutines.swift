@@ -339,7 +339,7 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     }
     
     let shiftInDataPoints = Int((currentDragX - startDragX) * pPSP ) //will be +ve if drag is to the right, screen points scaled to data points
-    print ("sIDP, pPSP, brim, kHW, OLI, ORI", shiftInDataPoints, pPSP , brim, kernelHalfWidth, originalLeftIndex, originalRightIndex)
+    //print ("sIDP, pPSP, brim, kHW, OLI, ORI", shiftInDataPoints, pPSP , brim, kernelHalfWidth, originalLeftIndex, originalRightIndex)
     
     //these will be wrong for transition
     var leftIndex   = originalLeftIndex + shiftInDataPoints - brim - kernelHalfWidth
@@ -348,7 +348,7 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     //check for edge here -protect against illegal indices
     (leftIndex, rightIndex) = checkIndices (left: leftIndex, right: rightIndex, leftEdge: 0, rightEdge: viewPoints.count)
     
-    print ("lIndex, rIndex: ", leftIndex, rightIndex)
+    //print ("lIndex, rIndex: ", leftIndex, rightIndex)
     let slice = Array(viewPoints[leftIndex..<rightIndex])
     //shorter than the filtered top hat? Fixed?
     return slice
