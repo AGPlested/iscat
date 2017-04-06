@@ -125,8 +125,19 @@ class GaussianFit {
         let xfs = xf.map {x in Float(x) * screenPPDP}
         let gaussPath = UIBezierPath()
         
-        let firstPoint = CGPoint (x: CGFloat(position - fringe), y: CGFloat(base))
         //draw left to right
+        var firstPoint = CGPoint()
+        
+        if back == true {
+            // if its a right to left pan, drawing left to right means 
+            // drawing from the end to the beginning - in terms of y...
+            // otherwise we draw |/ or |\ rather than just / or \
+            
+            firstPoint = CGPoint (x: CGFloat(position - fringe), y: CGFloat(base - amp))
+        } else {
+            firstPoint = CGPoint (x: CGFloat(position - fringe), y: CGFloat(base))
+        }
+        
         gaussPath.move(to: firstPoint)
         
         drawnPath = []

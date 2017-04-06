@@ -136,8 +136,9 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
         cCell.amplitude.text =  item.amplitude
         cCell.kindOfEvent.text =  item.kOE
         cCell.SSD.text = item.SSD
-        cCell.backgroundColor = item.color
-        // handle the different types of setting value case-by-case
+        //cCell.backgroundColor = item.color
+        
+        cCell.backgroundColor = item.color?.withAlphaComponent(0.50)
         
         return cCell
     }
@@ -148,6 +149,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
         let view = sender.view
         var loc = sender.location(in: view)
         print ("Single tap at \(loc).")
+        var eventTapped: Bool = false
         if let hitting = view?.layer.hitTest(loc) {
             if hitting.sublayers != nil {
                 for hitt in hitting.sublayers! {
@@ -161,6 +163,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                         //better for using the thick, invisible outline path
                         if (hitCustom.outlinePath.contains(loc))  {
                             print ("You hit event \(hitCustom.localID!) at \(loc)")
+                            eventTapped = true  //flag in case the tap was on nothing
                             let tappedEvent = fitData.list.first(where: {$0.localID == hitCustom.localID!})
                             
                             if selected.hasEventWithID(ID: hitCustom.localID!) {
@@ -183,14 +186,36 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                             //should be a function to update labels/console
                             selectedLabel.text = selected.consolePrintable(title: "Selected")
                             
-                            
-                            //still seems to be selecting below???
+                            //still seems to be selecting below and confusedly???
 
-                            
                         }
                     }
                 }
             }
+            if eventTapped != true {
+                //tapped on empty space so clear selection
+                for event in selected.list {
+                    let eventID = event.localID
+                    
+                    //search through all possible layers for the one with eventID
+                    for layer in hitting.sublayers!{
+                        if let missedCustom = layer as? CustomLayer {
+                            if missedCustom.localID == eventID {
+                        //find relevant layer and fix thick/opacity
+                                CATransaction.begin()
+                                missedCustom.lineWidth = 5.0
+                                missedCustom.opacity = 1
+                                CATransaction.commit()
+                            }
+                        }
+                    }
+                    //remove from the selected list
+                    selected.removeEventByLocalID(ID: eventID!)
+                    print ("Deselected event \(eventID!)")
+                    
+                }
+            }
+            selectedLabel.text = selected.consolePrintable(title: "Selected")
         }
     }
     
@@ -210,7 +235,6 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
             //print (selectedEvent)
             let eventToDelete = selectedEvent.localID!
             let rmSelected = selected.removeEventByLocalID(ID: eventToDelete)
-            
             if rmSelected == true {
                 print ("Removed \(eventToDelete) from selected list.")
             }
@@ -219,8 +243,6 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
             if rmFit == true {
                 print ("Removed \(eventToDelete) from fitData list.")
             }
-            
-            //updateLabels
             
             for cLayer in FitView.layer.sublayers! {
                 print (cLayer)
@@ -231,6 +253,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                     }
                 }
             }
+        
         //update console for fitted events - flat repopulation: no animation
         consoleTableRows = []
         for event in fitData.list {
@@ -239,8 +262,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
         }
         console.reloadData()
         
-        
-        
+        //update labels
         selectedLabel.text = selected.consolePrintable() //show empty
         //place a 250 ms delay on the disappearance of the pop-up control
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
@@ -310,22 +332,23 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
             locationOfBeganTap = gesture.location(in: gesture.view)
 
             if selected.list.isEmpty {
+                print ("Began one finger pan at ", locationOfBeganTap!)
                 //create event, unclassified at this point
                 localCreationID += 1
                 gestureDecision = false
                 panEntry = .unclassified
-                //wait to specify kind of event but allw SSD and color to update during gesture
+                //wait to specify kind of event but allow SSD and color to update during gesture
                 fitEventToStore = Event()
                 fitEventToStore?.fitSSD = worstSSD
                 fitEventToStore?.colorFitSSD = UIColor.red
-                print ("Began one finger pan.", locationOfBeganTap!)
+                
                 
             }
             else {
             //move selected items
-                print ("Began one finger drag of \(selected).", locationOfBeganTap!)
+                print ("Began one finger drag of item(s) \(selected) at ", locationOfBeganTap!)
                 
-                //store selected events, layer transforms, and original x,y screen points                 
+                //containters to store selected events, layer transforms, and original x,y screen points
                 selectedEvents = [:]
                 selectedTransforms = [:]
                 selectedFitPoints = [:]
@@ -359,12 +382,12 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 //logic between lines, events and transitions
                 //see if we decided already what event it is
                 guard gestureDecision else {
-                    //decision flag is set once, event if the gesture
+                    //decision flag is set once, even if the gesture reverts within circle
                     gestureDecision = didEscapePanDecisionLimit(first: locationOfBeganTap!, current: currentLocationOfTap!, radius: Float(decisionRadius))
                     return
                 }
                 
-                //if decision was made the we have to set what kind of event it is
+                //if decision was made, we have to set what kind of event it is
                 if panEntry == .unclassified {
                     
                         // arc value between 0 (diagonal pan off) and 1 (only diag pan)
@@ -372,31 +395,33 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                         panEntry = panArcEntry(first: locationOfBeganTap!, current: currentLocationOfTap!, arc: arc, openingsDown: true)
                     
                         fitEventToStore?.kindOfEntry = panEntry
-                        //create the layer frame for event
+                        // to retrieve event information from list later, layer gets same ID below
+                        fitEventToStore!.localID = localCreationID
+                    
                         switch panEntry {
                             
                             case .opening, .shutting :
-                                //create tophat event
-                                
+                                //create filtered tophat event layer
                                 gaussianPath = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!)
                                 gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
                                 gaussianLayer.localID = localCreationID
-                                FitView.layer.addSublayer(gaussianLayer)  // event created is linked to layer for later
+                                FitView.layer.addSublayer(gaussianLayer)
                             
                             case .sojourn   :
+                                //create line fit to sojourn layer
                                 averageY = (locationOfBeganTap?.y)!
                                 //print (String(format:"averageY: %@", averageY))
                                 fitLine = createHorizontalLine(startTap: locationOfBeganTap, endTap: currentLocationOfTap!)
                                 fitLine.localID = localCreationID
                                 FitView.layer.addSublayer(fitLine)
                             
-                            //need to fix the consequences of this at the end of the gesture
                             case .transition:
+                                //create filtered step transition
+                                fitEventToStore?.duration = 0       // no duration
                                 gaussianPath = gfit.buildGaussStepPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!)
                                 gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
                                 gaussianLayer.localID = localCreationID
-                                fitEventToStore?.duration = 0
-                                FitView.layer.addSublayer(gaussianLayer)  // event created is linked to layer for later
+                                FitView.layer.addSublayer(gaussianLayer)
                             
                             default: print("no logic for making an undefined event")
                         }
@@ -408,19 +433,16 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                             
                         case .sojourn : extendLineFit(locationOfBeganTap: locationOfBeganTap!, currentLocationOfTap: currentLocationOfTap!, pointsToFit: pointsToFit, viewWidth: viewWidth, yPlotOffset: yPlotOffset, traceHeight: traceHeight, fitLine: fitLine, fitEventToStore: fitEventToStore!)
                         
-                            
                         case .transition: extendStepEvent(locationOfBeganTap: locationOfBeganTap!, currentLocationOfTap: currentLocationOfTap!, pointsToFit: pointsToFit, viewWidth: viewWidth, yPlotOffset: yPlotOffset, traceHeight: traceHeight, gfit: gfit, gaussianLayer: gaussianLayer , fitEventToStore: fitEventToStore!)
                             
                         default: print("no logic for making an undefined event")
-
                     }
-            
                 }
             
             } else {
-                // some events are selected
-                // move paths around with live SSD
+                // some events are selected so move paths around with live SSD
                 // all events are references to classes.
+                // has to handle all kinds of events (sojourn, top hat, transition)
                 
                 for (_, event) in selected.list.enumerated() {
                     for layer in (gesture.view?.layer.sublayers!)! {
@@ -438,17 +460,17 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 //pass initial event to get start of event at start of drag, not the updating event
                                 targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
                                
-                                
                                 let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
                                 
-                                //populate array with current y-points from Path for SSD
+                                //populate array with current y-points from path, for SSD
                                 var fitPoints = [Float]()
                                 for point in cLayer.drawnPathPoints {
                                     fitPoints.append(Float(point.y))
                                 }
                                 print ("dPPx0: ", cLayer.drawnPathPoints[0])
                                 print ("event start x:", event.timePt - event.duration! / 5 - Float(gaussianKernelHalfWidth) * screenPointsPerDataPoint!)
-                                //calculate SSD 
+                                
+                                //calculate SSD
                                 let SSD_size = Float(target.count)
                                 //print (fitPoints, target)
                                 let normalisedSSD = calculateSSD (A: fitPoints, B: target) / SSD_size
@@ -456,7 +478,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 let color = fitColor(worstSSD : worstSSD, currentSSD: normalisedSSD)
                                 print ("SSD, col, fitLen, targLen: ", normalisedSSD, color, fitPoints.count, target.count)
 
-                                //translate the path
+                                //form translation for the path
                                 let originalTransform = selectedTransforms[cLayer.localID!]
                                 // original transform is the layer's transform at the start of the drag
                                 // taps are within the layer so relative calculations not needed.
@@ -465,18 +487,18 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 print ("ctn \(tx,ty,originalTransform!.m41, originalTransform!.m42)")
                                 let newTransform = CATransform3DMakeTranslation(tx, ty, 0)
                                 
+                                //translate and update SSD color code
                                 CATransaction.begin()
                                 CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
                                 cLayer.transform = newTransform
                                 cLayer.strokeColor = color.cgColor
                                 CATransaction.commit()
                                 
-                                //subtracting the original transform because its included.
+                                //subtract the original transform because its included.
                                 let incrementalTransformX = tx - originalTransform!.m41
                                 let incrementalTransformY = ty - originalTransform!.m42
                                 
                                 //update with current transform from points (in screen coordinates) at the start of the drag.
-                                
                                 var updatedFitPoints = [CGPoint]()
                                 for point in selectedFitPoints[cLayer.localID!]! {
                                     let newPoint = CGPoint(x: point.x + incrementalTransformX, y: point.y + incrementalTransformY)
@@ -484,20 +506,20 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 
                                 cLayer.drawnPathPoints = updatedFitPoints   //the current points for the next round of SSD
                                 
-                                print (cLayer, updatedFitPoints[0], updatedFitPoints.last!)
+                                //print (cLayer, updatedFitPoints[0], updatedFitPoints.last!)
                                 
-                                let tempOutlinePath = UIBezierPath()     //use the current points
+                                let tempOutlinePath = UIBezierPath()     //use the current points to create fat outline layer
                                 tempOutlinePath.move(to: updatedFitPoints[0])
                                 for i in 1 ..< updatedFitPoints.count {
                                     tempOutlinePath.addLine(to: updatedFitPoints[i])
                                     }
 
+                                //store the outline path
                                 cLayer.outlinePath = tempOutlinePath.cgPath.copy( strokingWithWidth: 50,
                                     lineCap: CGLineCap(rawValue: 0)!,
                                     lineJoin: CGLineJoin(rawValue: 0)!,
                                     miterLimit: 1) as! CGMutablePath
                                 
-                                    
                                 //update with current transform from timePt at the start of the drag.
                                 let savedEvent = selectedEvents[cLayer.localID!]
                                 event.timePt = (savedEvent?.timePt)! + Float(incrementalTransformX)
@@ -527,8 +549,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 let graphicalAmplitude = Float((locationOfEndTap?.y)! - (locationOfBeganTap?.y)!)       //no conversion into real world units yet
                 
  
-                // to retrieve event information from list later
-                fitEventToStore!.localID = localCreationID          //tautology??
+                
                 // acccount for reverse (R -> L pan) fits with min and max
                 let fittedStart = min (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
                 let fittedEnd = max (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
@@ -564,13 +585,15 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                     }
                 }
             }
-            consoleTableRows = []
-            for event in fitData.list {
-                let eventForConsole = eventTableItem(e: event)
-                consoleTableRows.append (eventForConsole)
-            }
-            console.reloadData() //nothing seems to happen yet...
+            //console update was here
         }
+        //updating console with every step of the pan gesture??
+        consoleTableRows = []
+        for event in fitData.list {
+            let eventForConsole = eventTableItem(e: event)
+            consoleTableRows.append (eventForConsole)
+        }
+        console.reloadData() //nothing seems to happen yet...
     }
     
     @IBAction func rejectFit(_ sender: Any) {

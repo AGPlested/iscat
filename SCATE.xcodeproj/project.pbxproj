@@ -27,6 +27,8 @@
 		498E2F321E729E2E00BBB0D8 /* settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498E2F311E729E2E00BBB0D8 /* settings.swift */; };
 		49BF8FF71E8AC2DA00B218ED /* fittingRoutines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49BF8FF61E8AC2DA00B218ED /* fittingRoutines.swift */; };
 		49C8B5431E69A02D005455CB /* Gaussian.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49C8B5421E69A02D005455CB /* Gaussian.swift */; };
+		49F90FB01E969A70002C3F8A /* simplex_pef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F90FAF1E969A70002C3F8A /* simplex_pef.swift */; };
+		49F90FB21E969AAC002C3F8A /* simplex_pef_tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F90FB11E969AAC002C3F8A /* simplex_pef_tests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +66,8 @@
 		498E2F311E729E2E00BBB0D8 /* settings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = settings.swift; sourceTree = "<group>"; };
 		49BF8FF61E8AC2DA00B218ED /* fittingRoutines.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = fittingRoutines.swift; sourceTree = "<group>"; };
 		49C8B5421E69A02D005455CB /* Gaussian.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Gaussian.swift; sourceTree = "<group>"; };
+		49F90FAF1E969A70002C3F8A /* simplex_pef.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = simplex_pef.swift; sourceTree = "<group>"; };
+		49F90FB11E969AAC002C3F8A /* simplex_pef_tests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = simplex_pef_tests.swift; path = ../SCATETests/simplex_pef_tests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -115,6 +119,7 @@
 				491A7CE71D4CE2030017D238 /* LaunchScreen.storyboard */,
 				491A7CE21D4CE2030017D238 /* Main.storyboard */,
 				492304F61E796E4800C2A439 /* CustomCells.swift */,
+				49F90FAF1E969A70002C3F8A /* simplex_pef.swift */,
 				49C8B5421E69A02D005455CB /* Gaussian.swift */,
 				491A7D001D4D06510017D238 /* TraceIO.swift */,
 				49529B1A1DBA2BA2006CF048 /* TraceDisplay.swift */,
@@ -133,6 +138,7 @@
 		491A7CF21D4CE2040017D238 /* SCATE Tests */ = {
 			isa = PBXGroup;
 			children = (
+				49F90FB11E969AAC002C3F8A /* simplex_pef_tests.swift */,
 				491A7CF31D4CE2040017D238 /* ISCATTests.swift */,
 				491A7CF51D4CE2040017D238 /* Info.plist */,
 			);
@@ -273,8 +279,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				49F90FB21E969AAC002C3F8A /* simplex_pef_tests.swift in Sources */,
 				49C8B5431E69A02D005455CB /* Gaussian.swift in Sources */,
 				4964D7E91E7198F500078EF9 /* FittingViewController.swift in Sources */,
+				49F90FB01E969A70002C3F8A /* simplex_pef.swift in Sources */,
 				49529B1B1DBA2BA2006CF048 /* TraceDisplay.swift in Sources */,
 				491A7CE11D4CE2030017D238 /* TraceViewController.swift in Sources */,
 				4973B5FE1E83BD02001E8EC2 /* EventsViewController.swift in Sources */,
