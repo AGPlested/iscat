@@ -18,7 +18,7 @@ struct Segment {
 
 class TraceDisplay: UIView {
     
-    var tDrawScale : CGFloat = 0.5 {
+    var compression : CGFloat = 0.5 {
         didSet {
             setNeedsDisplay()
             print("set")

@@ -21,15 +21,11 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     @IBOutlet weak var progressLabel: UILabel!
     @IBOutlet weak var statusLabel: UILabel!
 
-
     @IBOutlet weak var rawDataFilenameLabel: UILabel!
     @IBOutlet weak var dataFileHelper: UILabel!
     
     @IBOutlet weak var recentFitsTable: UITableView!
     @IBOutlet weak var recentFitsView: UIView!
-    
-    
-    
     
     @IBOutlet weak var quickSettingsView: UIView!
 
@@ -78,51 +74,6 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
 
     
     func traceView(arr: [Int16]) {
-        let dataFileLength = arr.count
-        let headerSize = s.header.getIntValue()
-        traceLength = dataFileLength - headerSize
-        let scaledTraceLength = Int (v.tDrawScale * CGFloat(traceLength!))
-        
-        //calibration of 10 ms
-        let calInScaledSamples = Int (Float(v.tDrawScale) * Float(s.sampleRate.getFloatValue()) / 100)
-        
-        let nCalibrators = Int (scaledTraceLength / calInScaledSamples)
-        
-        var xC = 0
-        
-        for i in 0..<nCalibrators {
-        
-            //calibrator label
-            let lab = UILabel()
-            labelsOnXAxis.append(lab)   //store references for easy adjustment later
-            lab.text = "\(i * 10)"      //each calibrator should be 10 ms
-            lab.textColor = UIColor.lightGray
-            lab.font = lab.font.withSize(14.0 / sv.zoomScale)
-            lab.sizeToFit()
-            lab.frame.origin = CGPoint(x:xC+5, y:105)  //offset
-            
-            //x scale bar
-            let scale = xRuler()
-            let scaleLayer = scale.axisLayer(widthInScreenPoints: CGFloat(calInScaledSamples), minorT: 5)
-            scaleLayer.frame.origin = CGPoint(x:xC, y:100)
-            
-            scaleLayer.strokeColor = UIColor.lightGray.cgColor
-            scaleLayer.lineJoin = kCALineJoinRound
-            scaleLayer.fillColor = nil
-            scaleLayer.lineWidth = 0.5
-            
-            v.addSubview(lab)
-            v.layer.addSublayer(scaleLayer)
-            xC += calInScaledSamples
-        }
-        
-        let chunk = Int (Float(calInScaledSamples) / Float(v.tDrawScale ))
-        let chunkN = Int (traceLength! / chunk )        // the number of data chunks to display
-        
-        let step = ceil(1 / Double(v.tDrawScale))
-        
-        print ("step, cN, cN*ch, tL, sTL:",step, chunkN, chunkN * chunk, traceLength!, scaledTraceLength)
-        
         //sv.backgroundColor = UIColor.darkGray
         sv.translatesAutoresizingMaskIntoConstraints = false
         sv.minimumZoomScale = 0.1
@@ -133,14 +84,60 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         }
         
         sv.addSubview(v)        //UIView
+        
+        //v.compression is the fraction of the data points plotted
+        //its inverse is the stride through the array of all points
+        
+        let dataFileLength = arr.count
+        let headerSize = s.header.getIntValue()
+        traceLength = dataFileLength - headerSize
+        let scaledTraceLength = Int (v.compression * CGFloat(traceLength!))
+        
+        let calInScreenPts = Int (Float(v.compression) * Float(s.sampleRate.getFloatValue()) / 100) //calibration of 10 ms
+        
+        let nCalibrators = Int (scaledTraceLength / calInScreenPts) //same whatever the compression
+        
+        var xC = 0
+        
+        for i in 0..<nCalibrators {
+        
+            //calibrator label
+            let lab = UILabel()
+            labelsOnXAxis.append(lab)   //store references for easy adjustment later
+            lab.text = "\(i * 10)"      //each calibrator is 10 ms
+            lab.textColor = UIColor.lightGray
+            lab.font = lab.font.withSize(14.0 / sv.zoomScale)
+            lab.sizeToFit()
+            lab.frame.origin = CGPoint(x:xC+5, y:105)  //offset
+            
+            //x scale bar
+            let scale = xRuler()
+            let scaleLayer = scale.axisLayer(widthInScreenPoints: CGFloat(calInScreenPts), minorT: 5)
+            scaleLayer.frame.origin = CGPoint(x:xC, y:100)
+            
+            scaleLayer.strokeColor = UIColor.lightGray.cgColor
+            scaleLayer.lineJoin = kCALineJoinRound
+            scaleLayer.fillColor = nil
+            scaleLayer.lineWidth = 0.5
+            
+            v.addSubview(lab)
+            v.layer.addSublayer(scaleLayer)
+            xC += calInScreenPts
+        }
+        
+        let chunk = Int (Float(calInScreenPts) / Float(v.compression))
+        let chunkN = Int (traceLength! / chunk )        // the number of data chunks to display
+        
+        let step = ceil(1 / Double(v.compression))
+        
+        print ("step, cN, cN*ch, tL, sTL:",step, chunkN, chunkN * chunk, traceLength!, scaledTraceLength)
+        
         print ("Drawing trace from \(s.dataFilename.getStringValue())")
         
         var firstPoint = CGPoint(x:xp, y:200)           //xp is the x position
         var drawnPoint = CGPoint(x:xp, y:200)
         
         for i in 0..<chunkN {
-            
-    
             
             //drawing trace
             let thickness: CGFloat = 1.5
@@ -151,7 +148,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
                 pointIndex = index + headerSize + tStart + i * chunk
                 
                 //xp is separately scaled by tDrawScale
-                drawnPoint = CGPoint(x: xp + v.tDrawScale * CGFloat(index), y: CGFloat(200) * (1.0 + CGFloat(arr[pointIndex]) / 32536.0))
+                drawnPoint = CGPoint(x: xp + v.compression * CGFloat(index), y: CGFloat(200) * (1.0 + CGFloat(arr[pointIndex]) / 32536.0))
                 tracePath.addLine(to: drawnPoint)
             }
             
@@ -169,7 +166,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             traceLayer.lineWidth = thickness
             v.layer.addSublayer(traceLayer)             //accumulate a bunch of anonymous layers.
             
-            xp += CGFloat(chunk) * v.tDrawScale
+            xp += CGFloat(chunk) * v.compression
         }
         
         var sz = sv.bounds.size     //Not sure what these three lines do any more.
@@ -344,15 +341,15 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         
         for event in fit.list {
             masterEventList.eventAppend(e: event)
-            
+        }
+        
         if masterEventList.count() != 0 {
-            compView.updateSegments(eventL: masterEventList, y: 600, samplePerMs: Float(v.tDrawScale) * Float(s.sampleRate.getFloatValue()) / 1000.0 )
-            }
+            compView.updateSegments(eventL: masterEventList, y: 200, samplePerMs: Float(v.compression) * Float(s.sampleRate.getFloatValue()) / 1000.0 )
+        }
             
         // now provide much simplified status report because info is in "Recent fits" table
         statusLabel.text = String(format:"Stored fit: %@",fit.titleGenerator())
         controller.dismiss(animated: true, completion: {})
-        }
     }
     
     func SettingsVCDidFinish(controller: SettingsViewController, updatedS: SettingsList) {
@@ -371,25 +368,22 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
                 destinationVC.progressCounter = self.progress
                 //progress excludes the header
                 
-                
                 destinationVC.settings = s
                 let dataLength = Float(traceLength!) // not scaled
-                let scaledDataLength = dataLength * Float(v.tDrawScale)
                 
-                
-                destinationVC.leftEdgeTime = (scaledDataLength / Float(samplesPerMillisecond)) * (self.progress / 100 )  //progress is percentage
+                // in ms
+                destinationVC.leftEdgeTime = (dataLength / Float(samplesPerMillisecond)) * (self.progress / 100 )  //progress is percentage
                 
                 //need to check for plausible header value here
+                //work in real not compressed data space
                 let leftPoint = s.header.getIntValue() + Int(self.progress / 100 * dataLength)
                 let rightPoint = leftPoint + Int(dataLength * Float(sv.bounds.width / sv.contentSize.width))
-                print (leftPoint, rightPoint, rightPoint-leftPoint, traceArray.count, sv.bounds.width, sv.contentSize.width) //these points are all wrong compared to whats on the screen but getting there. tooMUCH!
+                print (leftPoint, rightPoint, rightPoint-leftPoint, traceArray.count, sv.bounds.width, sv.contentSize.width) //these points are a bit off??
                 
-                //let pointRange = (leftPoint, rightPoint)
-                let fitSlice = Array(self.traceArray[leftPoint..<rightPoint]) //still seems like it takes too much but why???
-                print (fitSlice.count, sv.bounds.width / sv.contentSize.width, dataLength * Float(sv.bounds.width / sv.contentSize.width) )
+                let fitSlice = Array(self.traceArray[leftPoint..<rightPoint])
+                //print (fitSlice.count, sv.bounds.width / sv.contentSize.width, dataLength * Float(sv.bounds.width / sv.contentSize.width) )
                 destinationVC.pointsToFit = fitSlice
                 destinationVC.delegate = self
-                
             }
         }
         else if segue.identifier == "SettingsViewSegue"
@@ -428,7 +422,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         //need to put a defensive limit in here to avoid overshoot
         self.offset = sv.contentOffset
         print ("hard zooming", self.offset)
-        v.tDrawScale *= 2       //increase the horizontal zoom factor
+        v.compression *= 2       //increase the horizontal zoom factor
         v.layer.sublayers = nil //kill all the existing layers (ALL!!!)
         
         
@@ -438,7 +432,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         traceView(arr: traceArray)
         
         print ("redrawn", sv.contentOffset)
-        sv.contentOffset = CGPoint (x: self.offset.x * v.tDrawScale, y: self.offset.y)
+        sv.contentOffset = CGPoint (x: self.offset.x * v.compression, y: self.offset.y)
     }
 
     //if this code executes, trace display disappears but otherwise app still runs
@@ -446,7 +440,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     @IBAction func zoomOut(_ sender: UIButton) {
         //need to put a defensive limit in here to avoid undershoot (data disappears!)
         
-        v.tDrawScale /= 2           //reduce the horizontal zoom factor
+        v.compression /= 2           //reduce the horizontal zoom factor
         v.layer.sublayers = nil     //kill all the existing layes (ALL!!!)
         
         //add display of zoom factor
