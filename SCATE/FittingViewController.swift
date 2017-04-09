@@ -14,13 +14,14 @@
 import UIKit
 
 protocol FitViewControllerDelegate {
-    func FitVCDidFinish(controller: FittingViewController, touches:Int, fit:eventList)
+    func FitVCDidFinish(controller: FittingViewController, leftEdge:Float, fit:eventList)
     }
 
 class FittingViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     var delegate: FitViewControllerDelegate? = nil
     
+    var leftEdgeTime : Float = 0
     var progressCounter : Float = 0
     var pointsToFit = [Int16]()
     
@@ -53,6 +54,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     let fitWindow = CGPoint (x: 900, y: 600)
     let viewWidth = CGFloat(900)
     var screenPointsPerDataPoint : Float?
+    var screenPointsPerMillisecond : Float?
     let openingsDown : Bool = true
     var gestureDecision : Bool = false
     let decisionRadius : CGFloat = 10   //10 pt movement during pan before deciding what gesture it is.
@@ -89,13 +91,23 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     @IBOutlet weak var popUpControlBottomConstraint: NSLayoutConstraint!
 
     
+    // these functions convert real world time (in ms) to screen points in this view, and back
+    func timeToScreenPt (t: Float) -> Float {
+        return (t - leftEdgeTime) * screenPointsPerMillisecond!
+    }
+    
+    func screenPtToTime (t: Float) -> Float {
+        return t / screenPointsPerMillisecond! + leftEdgeTime
+    }
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         fitTraceView(FitView: FitView, viewWidth: viewWidth, pointsToFit: pointsToFit, yOffset: yPlotOffset, traceHeight: traceHeight)
         
         screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
-        
+        screenPointsPerMillisecond = screenPointsPerDataPoint! * Float(settings.sampleRate.getFloatValue()) / 1000.0
         positionLabel.text = "Position in trace \(progressCounter) %"
         selectedLabel.text = "Nothing selected"
         console.dataSource = self
@@ -147,7 +159,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     @IBAction func drawnFitTap(_ sender: UITapGestureRecognizer) {
         
         let view = sender.view
-        var loc = sender.location(in: view)
+        let loc = sender.location(in: view)
         print ("Single tap at \(loc).")
         var eventTapped: Bool = false
         if let hitting = view?.layer.hitTest(loc) {
@@ -163,7 +175,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                         //better for using the thick, invisible outline path
                         if (hitCustom.outlinePath.contains(loc)) || (hitCustom.outlinePath.contains(locConverted))   {
                             print ("You hit event \(hitCustom.localID!) at \(loc)")
-                            eventTapped = true  //flag in case the tap was on nothing
+                            eventTapped = true  //flag indicating something was hit
                             let tappedEvent = fitData.list.first(where: {$0.localID == hitCustom.localID!})
                             
                             if selected.hasEventWithID(ID: hitCustom.localID!) {
@@ -358,11 +370,13 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                         if let cLayer = layer as? CustomLayer {
                             if cLayer.localID == event.localID {
                                 
-                                var stored = StoredEvent()    //struct not class, events not references to events
-                                stored.timePt = event.timePt
-                                stored.duration = event.duration
+                                var stored = StoredEvent()    //struct not class, events not references to events, store in screen points local to this fit window
+                                stored.timePt = timeToScreenPt(t: event.timePt)
+                                stored.duration = event.duration! * screenPointsPerMillisecond!
                                 //stored.amplitude = event.amplitude ///will need to include this later
                                 stored.localID = cLayer.localID!
+                                stored.kindOfEvent = event.kindOfEntry
+                                stored.amplitude = Float(event.amplitude!)
                                 
                                 selectedEvents[cLayer.localID!] = stored
                                 selectedTransforms[cLayer.localID!] = cLayer.transform
@@ -510,10 +524,14 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 
                                 //update with current transform from timePt at the start of the drag.
                                 let savedEvent = selectedEvents[cLayer.localID!]
-                                event.timePt = (savedEvent?.timePt)! + Float(incrementalTransformX)
-                                
+                                event.timePt = screenPtToTime(t: ((savedEvent?.timePt)! + Float(incrementalTransformX)) )
+                                //only update the amplitude of a sojourn
+                                //in a way it's nonsense. We need a baseline and amplitude for other events
+                                if savedEvent?.kindOfEvent == .sojourn {
+                                        event.amplitude =  Double(incrementalTransformY) + Double((savedEvent?.amplitude!)!)
+                                    }
                                 //update SSD and color for event
-                                event.fitSSD = normalisedSSD
+                                event.fitSSD! = normalisedSSD
                                 event.colorFitSSD = color
                                 }
                             }
@@ -541,17 +559,22 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 // acccount for reverse (R -> L pan) fits with min and max
                 let fittedStart = min (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
                 let fittedEnd = max (Float((locationOfBeganTap?.x)!), Float((locationOfEndTap?.x)!))
-                
-                //storing screen coordinates right now, will adapt to real world coordinates later
-                
+            
+                //store times in ms
                 if fitEventToStore?.kindOfEntry == .transition {
-                    fitEventToStore!.timePt = Float((locationOfBeganTap?.x)!)
+                    fitEventToStore!.timePt = screenPtToTime(t: Float((locationOfBeganTap?.x)!))
                 } else {
-                    fitEventToStore!.timePt = fittedStart
-                    fitEventToStore!.duration = fittedEnd - fittedStart
+                    fitEventToStore!.timePt = screenPtToTime(t: fittedStart)
+                    fitEventToStore!.duration = (fittedEnd - fittedStart) / screenPointsPerMillisecond!
                 }
                 
-                fitEventToStore!.amplitude = Double(graphicalAmplitude)
+                //screen points not real amplitude
+                
+                if fitEventToStore!.kindOfEntry == .sojourn {
+                    fitEventToStore!.amplitude = Double(averageY)
+                } else {
+                    fitEventToStore!.amplitude = Double(graphicalAmplitude)
+                }
                 
                 //SSD and color are already stored during drag
                 print (fitEventToStore!.printable())
@@ -601,13 +624,14 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     
     @IBAction func rejectFit(_ sender: Any) {
         print ("Reject button")
-        delegate?.FitVCDidFinish(controller: self, touches: 0, fit: eventList())
+        //return an empty list
+        delegate?.FitVCDidFinish(controller: self, leftEdge: 0, fit: eventList())
     }
 
     @IBAction func goBack(_ sender: Any) {
         print ("Store button")
         //pan count is not used any more.
-        delegate?.FitVCDidFinish(controller: self, touches: 0, fit: fitData)
+        delegate?.FitVCDidFinish(controller: self, leftEdge: leftEdgeTime, fit: fitData)
         
     }
 

@@ -27,14 +27,19 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     
     @IBOutlet weak var recentFitsTable: UITableView!
     @IBOutlet weak var recentFitsView: UIView!
-    var recentFitsTableRows = [recentEventTableItem]()
+    
+    
+    
     
     @IBOutlet weak var quickSettingsView: UIView!
 
+    var recentFitsTableRows = [recentEventTableItem]()
+    
     let v = TraceDisplay() //content view
     var s = SettingsList()
     let ld = TraceIO()     //file retrieval
-
+    let compView = completionView()
+    
     var masterEventList = eventList()
     
     //for recent fits info panel
@@ -73,22 +78,50 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
 
     
     func traceView(arr: [Int16]) {
-        traceLength = arr.count
-        
-        var firstPoint = CGPoint(x:xp, y:200)
-        var drawnPoint = CGPoint(x:xp, y:200)
-        
-        //chunks of 10 ms
-        let bChunk = Int (s.sampleRate.getFloatValue() / 100)
-        
+        let dataFileLength = arr.count
         let headerSize = s.header.getIntValue()
+        traceLength = dataFileLength - headerSize
+        let scaledTraceLength = Int (v.tDrawScale * CGFloat(traceLength!))
         
-        let chunk = Int (Float(bChunk) / Float(v.tDrawScale ))
-        let chunkN = Int ((traceLength! - headerSize) / chunk )        // the number of chunks to display
+        //calibration of 10 ms
+        let calInScaledSamples = Int (Float(v.tDrawScale) * Float(s.sampleRate.getFloatValue()) / 100)
+        
+        let nCalibrators = Int (scaledTraceLength / calInScaledSamples)
+        
+        var xC = 0
+        
+        for i in 0..<nCalibrators {
+        
+            //calibrator label
+            let lab = UILabel()
+            labelsOnXAxis.append(lab)   //store references for easy adjustment later
+            lab.text = "\(i * 10)"      //each calibrator should be 10 ms
+            lab.textColor = UIColor.lightGray
+            lab.font = lab.font.withSize(14.0 / sv.zoomScale)
+            lab.sizeToFit()
+            lab.frame.origin = CGPoint(x:xC+5, y:105)  //offset
+            
+            //x scale bar
+            let scale = xRuler()
+            let scaleLayer = scale.axisLayer(widthInScreenPoints: CGFloat(calInScaledSamples), minorT: 5)
+            scaleLayer.frame.origin = CGPoint(x:xC, y:100)
+            
+            scaleLayer.strokeColor = UIColor.lightGray.cgColor
+            scaleLayer.lineJoin = kCALineJoinRound
+            scaleLayer.fillColor = nil
+            scaleLayer.lineWidth = 0.5
+            
+            v.addSubview(lab)
+            v.layer.addSublayer(scaleLayer)
+            xC += calInScaledSamples
+        }
+        
+        let chunk = Int (Float(calInScaledSamples) / Float(v.tDrawScale ))
+        let chunkN = Int (traceLength! / chunk )        // the number of data chunks to display
         
         let step = ceil(1 / Double(v.tDrawScale))
         
-        print (step, chunkN, chunkN * chunk, traceLength!)
+        print ("step, cN, cN*ch, tL, sTL:",step, chunkN, chunkN * chunk, traceLength!, scaledTraceLength)
         
         //sv.backgroundColor = UIColor.darkGray
         sv.translatesAutoresizingMaskIntoConstraints = false
@@ -101,30 +134,13 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         
         sv.addSubview(v)        //UIView
         print ("Drawing trace from \(s.dataFilename.getStringValue())")
+        
+        var firstPoint = CGPoint(x:xp, y:200)           //xp is the x position
+        var drawnPoint = CGPoint(x:xp, y:200)
+        
         for i in 0..<chunkN {
             
-            //chunk label
-            let lab = UILabel()
-            labelsOnXAxis.append(lab)   //store references for easy adjustment later
-            lab.text = "\(i * 10)"      //each chunk should be 10 ms
-            lab.textColor = UIColor.lightGray
-            lab.font = lab.font.withSize(14.0 / sv.zoomScale)
-            lab.sizeToFit()
-            lab.frame.origin = CGPoint(x:xp+5, y:105)  //offset
-            
-            //x scale bar
-            let scale = xRuler()
-            let scaleLayer = scale.axisLayer(widthInScreenPoints: CGFloat(chunk) * v.tDrawScale, minorT: 5)
-            scaleLayer.frame.origin = CGPoint(x:xp, y:100)
-            
-            scaleLayer.strokeColor = UIColor.lightGray.cgColor
-            scaleLayer.lineJoin = kCALineJoinRound
-            scaleLayer.fillColor = nil
-            scaleLayer.lineWidth = 0.5
-
-            
-            v.addSubview(lab)
-            v.layer.addSublayer(scaleLayer)
+    
             
             //drawing trace
             let thickness: CGFloat = 1.5
@@ -164,24 +180,22 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        //get settings?
         
         
         //Load the trace
         traceArray = ld.loadData(dataFilename : s.dataFilename.getStringValue())
         //print (trace[0])
         traceView(arr: traceArray)
+        sv.addSubview(compView)
         sv.bouncesZoom = false
         statusLabel.text = "No fit yet"
         updateLabels()
         
         /*
-        sv.layer.borderColor = UIColor.white.cgColor
-        sv.layer.borderWidth = CGFloat(1.0)
-        recentFitsView.layer.borderColor = UIColor.white.cgColor
-        recentFitsView.layer.borderWidth = CGFloat(1.0)
-        quickSettingsView.layer.borderColor = UIColor.white.cgColor
-        quickSettingsView.layer.borderWidth = CGFloat(1.0)
+        if masterEventList.count() != 0 {
+            compView.updateSegments(eventL: masterEventList, y: 150, samplePerMs: Float (v.tDrawScale) * Float (s.sampleRate.getFloatValue()) / 1000.0)
+        }
+        //samplePerMs here is a misnomer - it's actually samples drawn on the screen per ms
         */
         recentFitsTable.dataSource = self
         recentFitsTable.delegate = self
@@ -246,6 +260,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         }
         
         updateLabels()
+        //compView.contentScaleFactor = scale not the right answer!
         
         print ("content size after resize", sv.contentSize.width, "offset after resize" , sv.contentOffset.x)
         sv.isUserInteractionEnabled = true
@@ -273,6 +288,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         
         //to get the progress meter correct, the
         //original content size must be scaled by the zoom factor during the zoom
+        
         progress = 100 * Float(sv.contentOffset.x) / Float(self.originalContentSize.width * zoomFactor)
         updateLabels()
         
@@ -286,19 +302,9 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         controller.dismiss(animated: true, completion: {})
     }
     
-    func FitVCDidFinish(controller: FittingViewController, touches: Int, fit:eventList) {
-        print ("Touches", touches)
+    func FitVCDidFinish(controller: FittingViewController, leftEdge: Float, fit:eventList) {
+        print ("left edge \(leftEdge) ms")
         print ("Fit", fit)
-        
-        /*not needed because we start with an empty recent fits list and never add empty fits
-         
-         let fitIsNotEmpty = !fit.list.isEmpty
-        //Work on the table, remove most recent event if it is empty.
-        , only look for a 'last' list in a non-empty list
-        if fitIsNotEmpty && recentFitList.last!.list.isEmpty {
-            recentFitList.popLast()  // discard result of this call
-        }
-        */
         
         //recentFitList is initialized empty
         //skip updating after empty or rejected fits
@@ -323,6 +329,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         
         //reject fit button returns an empty list
         
+        
+        
         guard fit.count() > 0 else {
             statusLabel.text = String(format:"No fit or fit rejected. Nothing stored ")
             controller.dismiss(animated: true, completion: {})
@@ -336,6 +344,10 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         
         for event in fit.list {
             masterEventList.eventAppend(e: event)
+            
+        if masterEventList.count() != 0 {
+            compView.updateSegments(eventL: masterEventList, y: 600, samplePerMs: Float(v.tDrawScale) * Float(s.sampleRate.getFloatValue()) / 1000.0 )
+            }
             
         // now provide much simplified status report because info is in "Recent fits" table
         statusLabel.text = String(format:"Stored fit: %@",fit.titleGenerator())
@@ -354,11 +366,20 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         {
             print ("FitViewSegue triggered.")
             if let destinationVC = segue.destination as? FittingViewController {
+                let samplesPerMillisecond = s.sampleRate.getFloatValue() / 1000.0
+                
                 destinationVC.progressCounter = self.progress
                 //progress excludes the header
+                
+                
                 destinationVC.settings = s
-                let dataLength = Float(traceLength!) - Float(s.header.getIntValue())
-                // this is not scaled
+                let dataLength = Float(traceLength!) // not scaled
+                let scaledDataLength = dataLength * Float(v.tDrawScale)
+                
+                
+                destinationVC.leftEdgeTime = (scaledDataLength / Float(samplesPerMillisecond)) * (self.progress / 100 )  //progress is percentage
+                
+                //need to check for plausible header value here
                 let leftPoint = s.header.getIntValue() + Int(self.progress / 100 * dataLength)
                 let rightPoint = leftPoint + Int(dataLength * Float(sv.bounds.width / sv.contentSize.width))
                 print (leftPoint, rightPoint, rightPoint-leftPoint, traceArray.count, sv.bounds.width, sv.contentSize.width) //these points are all wrong compared to whats on the screen but getting there. tooMUCH!

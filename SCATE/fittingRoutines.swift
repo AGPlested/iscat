@@ -321,10 +321,10 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     let currentDragX = Float(currentTouch.x)
     let pPSP = Float(viewPoints.count) / viewW
     
+    //stored values are in local screen points.
     let startTime = e.timePt
-    let originalLeftIndex = Int(startTime * pPSP)       //no proper conversion here yet - stored values are in screen points.
-    ///why is this getting crazy? still falling out sometimes and failing to update - giving negative indices
-    let originalRightIndex = Int((startTime + e.duration!) * pPSP)      //no proper conversion here yet - stored values are in screen points.
+    let originalLeftIndex = Int(startTime * pPSP)
+    let originalRightIndex = Int((startTime + e.duration!) * pPSP)
     
     var brim = 0                                   //for the case of a line layer being dragged.
     

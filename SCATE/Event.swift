@@ -25,7 +25,7 @@ let otherEvents = [
 
 
 struct StoredEvent {
-    //var kindOfEvent : Entries
+    var kindOfEvent : Entries?
     var timePt: Float = 0
     var duration: Float?
     var amplitude: Float?
