@@ -12,7 +12,8 @@ struct Segment {
     var start : CGFloat
     var end : CGFloat
     var color : UIColor
-    let thickness : CGFloat = 30
+    var kindOfEvent : Entries
+    let thickness : CGFloat = 5
     
 }
 
@@ -34,19 +35,25 @@ class TraceDisplay: UIView {
 
 }
 
+// make classes for the x and y axes here, so they can be zoomed independently!
+
+
 class completionView: UIView {
     
     var yPosition : CGFloat?
     var eventsToDraw = [Event]()
-    var samplesPerMillisecond : Float?
+    var screenPtsPerMs : Float?
+    var tOffset : Float?                     //in case we are using in a fixed view
     
     func getSegments() -> [Segment] {
         var segments = [Segment]()
+        print ("offset:", tOffset!)
         for event in eventsToDraw {
-            let start = CGFloat(event.timePt * samplesPerMillisecond!)
-            let end = CGFloat((event.timePt + event.duration!) * samplesPerMillisecond!)
+            let start = CGFloat((event.timePt - tOffset!) * screenPtsPerMs!)
+            let end = CGFloat((event.timePt + event.duration! - tOffset!) * screenPtsPerMs!)
             let color = event.colorFitSSD!
-            let seg = Segment (start: start, end: end, color: color)
+            let kind = event.kindOfEntry
+            let seg = Segment (start: start, end: end, color: color, kindOfEvent: kind)
             print ("start, end: ", start, end)
             segments.append(seg)
         }
@@ -66,28 +73,67 @@ class completionView: UIView {
     
         //drawing segment
         let segmentPath = UIBezierPath()
-        let segmentStart = CGPoint(x: seg.start, y: yPos)
-        let segmentEnd = CGPoint(x: seg.end, y: yPos)
-        segmentPath.move(to: segmentStart)
-        segmentPath.addLine(to: segmentEnd)
+        var segmentStart = CGPoint(x: seg.start, y: yPos)
+        var segmentEnd = CGPoint(x: seg.end, y: yPos)
+        var thickness = seg.thickness                   //modulate on event type
+        var segColor = seg.color                        //modulate on event type
+
+        
+        switch seg.kindOfEvent {
+            case .transition :
+                segmentPath.addArc(withCenter: segmentStart, radius: 8, startAngle: 0, endAngle: CGFloat.pi * 2, clockwise: true) //radians
+                thickness = 2
+            
+            case .opening :
+                segmentPath.addArc(withCenter: segmentStart, radius: 8, startAngle: 0, endAngle: CGFloat.pi * 2, clockwise: true) //radians
+                segmentPath.move(to: CGPoint(x: segmentEnd.x + 8, y: segmentEnd.y)) //avoid drawing little radius
+                segmentPath.addArc(withCenter: segmentEnd, radius: 8, startAngle: 0, endAngle: CGFloat.pi * 2, clockwise: true) //radians
+                thickness = 2
+                segmentStart.y += 8
+                segmentEnd.y += 8
+                segmentPath.move(to: segmentStart)
+                segmentPath.addLine(to: segmentEnd)
+            
+            case .shutting :
+                segmentPath.addArc(withCenter: segmentStart, radius: 8, startAngle: 0, endAngle: CGFloat.pi * 2, clockwise: true) //radians
+                segmentPath.move(to: CGPoint(x: segmentEnd.x + 8, y: segmentEnd.y)) //avoid drawing little radius
+                segmentPath.addArc(withCenter: segmentEnd, radius: 8, startAngle: 0, endAngle: CGFloat.pi * 2, clockwise: true) //radians
+                thickness = 2
+                segmentStart.y -= 8
+                segmentEnd.y -= 8
+                segmentPath.move(to: segmentStart)
+                segmentPath.addLine(to: segmentEnd)
+
+            case .mark:
+                let markTop = CGPoint(x: segmentStart.x, y: segmentStart.y - 10)
+                let markBottom = CGPoint(x: segmentStart.x, y: segmentStart.y + 10)
+                segmentPath.move(to: markTop)
+                segmentPath.addLine(to: markBottom)
+                segColor = UIColor.blue
+                thickness = 8
+            
+            default :           //for sojourns
+                segmentPath.move(to: segmentStart)
+                segmentPath.addLine(to: segmentEnd)
+        }
         
         // render to layer
         let segmentLayer = CAShapeLayer()
         segmentLayer.path = segmentPath.cgPath
         //segmentLayer.lineJoin = kCALineJoinRound
         
-        segmentLayer.strokeColor = seg.color.cgColor
+        segmentLayer.strokeColor = segColor.cgColor
         
         segmentLayer.fillColor = nil
-        segmentLayer.lineWidth = seg.thickness
+        segmentLayer.lineWidth = thickness
         
         return segmentLayer
     }
     
-    func updateSegments (eventL: eventList, y: Float, samplePerMs: Float) {
-
+    func updateSegments (eventL: eventList, y: Float, samplePerMs: Float, offset: Float) {
+        tOffset = offset
         yPosition = CGFloat(y)
-        samplesPerMillisecond = samplePerMs
+        screenPtsPerMs = samplePerMs
         //clean out
         eventsToDraw = []
         
@@ -102,7 +148,7 @@ class completionView: UIView {
         
         for event in allEvents {
             switch event.kindOfEntry {
-                case .opening, .shutting, .transition, .sojourn :
+                case .opening, .shutting, .transition, .sojourn, .mark :
                     eventsToDraw.append (event)
          
                 default :

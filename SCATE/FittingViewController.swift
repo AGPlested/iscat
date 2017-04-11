@@ -21,7 +21,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
 
     var delegate: FitViewControllerDelegate? = nil
     
-    var leftEdgeTime : Float = 0
+    var leftEdgeTime : Float?
     var progressCounter : Float = 0
     var pointsToFit = [Int16]()
     
@@ -38,6 +38,9 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     var selected = eventList()
     //a default container for information picked up a different stages of fitting gestures
     var fitEventToStore : Event?
+    
+    var previousEvents = eventList()
+    var previous = completionView()
     
     //storage at the start of a dragging event
     var selectedTransforms = [Int: CATransform3D]()
@@ -93,16 +96,17 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     
     // these functions convert real world time (in ms) to screen points in this view, and back
     func timeToScreenPt (t: Float) -> Float {
-        return (t - leftEdgeTime) * screenPointsPerMillisecond!
+        return (t - leftEdgeTime!) * screenPointsPerMillisecond!
     }
     
     func screenPtToTime (t: Float) -> Float {
-        return t / screenPointsPerMillisecond! + leftEdgeTime
+        return t / screenPointsPerMillisecond! + leftEdgeTime!
     }
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         
         fitTraceView(FitView: FitView, viewWidth: viewWidth, pointsToFit: pointsToFit, yOffset: yPlotOffset, traceHeight: traceHeight)
         
@@ -118,6 +122,14 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
             let eventCellContents = eventTableItem(e: event)
             consoleTableRows.append (eventCellContents)
         }
+        
+        print (previousEvents.consolePrintable())
+        print ("lET",leftEdgeTime!)
+        previous.updateSegments(eventL: previousEvents, y: 50, samplePerMs: screenPointsPerMillisecond!, offset: leftEdgeTime!)
+        previous.layer.opacity = 0.3
+        FitView.addSubview(previous)
+        
+        
         // Do any additional setup after loading the view.
     }
 
@@ -631,7 +643,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     @IBAction func goBack(_ sender: Any) {
         print ("Store button")
         //pan count is not used any more.
-        delegate?.FitVCDidFinish(controller: self, leftEdge: leftEdgeTime, fit: fitData)
+        delegate?.FitVCDidFinish(controller: self, leftEdge: leftEdgeTime!, fit: fitData)
         
     }
 

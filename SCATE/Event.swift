@@ -268,6 +268,14 @@ struct eventList {
         }
     }
     
+    func listOfEventsInRange (startRange: Float, endRange: Float) -> [Event] {
+        //range values are in ms
+        let s = startRange
+        let e = endRange
+        return list.filter ({
+            if s < $0.timePt && e > $0.timePt { return true }; return false })
+    }
+    
     func listOfOpenings () -> [Event] {
         return list.filter ({
             if case .opening = $0.kindOfEntry { return true }; return false })
