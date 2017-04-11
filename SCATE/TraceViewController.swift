@@ -465,8 +465,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
                 
                 destinationVC.settings = s
                 let dataLength = Float(traceLength!) // not scaled
-                
-                
+                destinationVC.screenPointsPerPicoA = sv.zoomScale * v.verticalScale
+
                 // should pass pA calibrator as well. Simple as sPPPa * zoomscale?
                 // in ms
                 let leftEdge = (dataLength / Float(samplesPerMillisecond)) * (self.progress / 100 )  //progress is percentage

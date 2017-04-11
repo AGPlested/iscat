@@ -267,6 +267,10 @@ func checkIndices (left: Int, right: Int, leftEdge: Int = 0, rightEdge: Int) -> 
 
 
 func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
+    
+    //slice is wrong
+    let ears = max ((Int(pow (abs(firstTouch.y - currentTouch.y), 0.7))), 25)
+    
     let leftTap = min (Float(firstTouch.x), Float(currentTouch.x))
     let rightTap = max (Float(firstTouch.x), Float(currentTouch.x))
     
@@ -276,8 +280,8 @@ func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints
     
     let dataPointsPerScreenPoint = Float(viewPoints.count) / viewW
     
-    var leftIndex   = Int(Float(leftTap) * dataPointsPerScreenPoint) - kernelHalfWidth
-    var rightIndex   = Int(Float(rightTap) * dataPointsPerScreenPoint) + kernelHalfWidth
+    var leftIndex   = Int(Float(leftTap) * dataPointsPerScreenPoint) - ears
+    var rightIndex   = Int(Float(rightTap) * dataPointsPerScreenPoint) + ears
     
     //check for edge here -protect against illegal indices
     
@@ -298,7 +302,9 @@ func getStepSliceExtending (firstTouch: CGPoint, currentTouch: CGPoint, viewPoin
     //indices are extended by the half-width of the Gaussian filtering kernel.
     
     let dataPointsPerScreenPoint = Float(viewPoints.count) / viewW
-    let ears = max (Int((finalTap - baseTap) / 5), 3)
+    //let ears = max (Int((finalTap - baseTap) / 5), 3)
+    let ears = max ((Int(pow (abs(finalTap - baseTap), 0.7))), 25)
+    
     
     var leftIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) - ears
     var rightIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) + ears
@@ -312,7 +318,7 @@ func getStepSliceExtending (firstTouch: CGPoint, currentTouch: CGPoint, viewPoin
     return fittingSlice
 }
 
-
+//not entirely right for all events but getting there
 func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEvent, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
     
     //event should be the original stored event from the start of the drag
@@ -330,20 +336,17 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     
     //if we have a filtered event, need to add the auto-generated brim.
     if kernelHalfWidth != 0 {
-        brim = Int(e.duration! * pPSP / 5)        //brim of the top hat function is 1/5 of its hat width. should really call back to original function to check this.
+        brim = max ((Int(pow (abs(e.amplitude!), 0.7))), 25)
+        //amplitude is local and in screen points?
     }
     
-    //brim will be zero for a transition because duration = 0
-    if e.duration == 0 {
-        brim = 10
-    }
     
     let shiftInDataPoints = Int((currentDragX - startDragX) * pPSP ) //will be +ve if drag is to the right, screen points scaled to data points
     //print ("sIDP, pPSP, brim, kHW, OLI, ORI", shiftInDataPoints, pPSP , brim, kernelHalfWidth, originalLeftIndex, originalRightIndex)
     
     //these will be wrong for transition
-    var leftIndex   = originalLeftIndex + shiftInDataPoints - brim - kernelHalfWidth
-    var rightIndex  = originalRightIndex + shiftInDataPoints + brim + kernelHalfWidth
+    var leftIndex   = originalLeftIndex + shiftInDataPoints - brim
+    var rightIndex  = originalRightIndex + shiftInDataPoints + brim 
     
     //check for edge here -protect against illegal indices
     (leftIndex, rightIndex) = checkIndices (left: leftIndex, right: rightIndex, leftEdge: 0, rightEdge: viewPoints.count)

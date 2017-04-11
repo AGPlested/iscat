@@ -50,11 +50,11 @@ class GaussianFit {
     }
     
     func topHat (width: Int, height: Float) -> [Float] {
-        let h = height
-        let w = width
-        let brimW = Int(width / 5)
+        //let h = height
+        //let w = width
+        let brimW = max ((Int(pow (abs(height), 0.7))), 25)
         
-        var hat = Array<Float>(repeating: h, count: w)
+        var hat = Array<Float>(repeating: height, count: width)
         if brimW > 0 {
             let brim = Array<Float>(repeating: 0.0, count: brimW)
             hat = brim + hat + brim

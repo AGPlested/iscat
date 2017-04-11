@@ -21,6 +21,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
 
     var delegate: FitViewControllerDelegate? = nil
     
+    var screenPointsPerPicoA : CGFloat?
     var leftEdgeTime : Float?
     var progressCounter : Float = 0
     var pointsToFit = [Int16]()
@@ -388,7 +389,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 //stored.amplitude = event.amplitude ///will need to include this later
                                 stored.localID = cLayer.localID!
                                 stored.kindOfEvent = event.kindOfEntry
-                                stored.amplitude = Float(event.amplitude!)
+                                stored.amplitude = Float(event.amplitude!) * Float(screenPointsPerPicoA!)      //in screen points
                                 
                                 selectedEvents[cLayer.localID!] = stored
                                 selectedTransforms[cLayer.localID!] = cLayer.transform
@@ -405,7 +406,8 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
             //globally transform to be relative to trace window to improve touch?
             
             if selected.list.isEmpty {
-                //logic between lines, events and transitions
+                //logic between lines (horizontal), events and transitions (vertical)
+                
                 //see if we decided already what event it is
                 guard gestureDecision else {
                     //decision flag is set once, even if the gesture reverts within circle
@@ -455,6 +457,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                     //event was already created, we are now extending it
                     switch panEntry {
                         
+                        //color is wrong here.
                         case .opening, .shutting : extendTopHatEvent(locationOfBeganTap: locationOfBeganTap!, currentLocationOfTap: currentLocationOfTap!, pointsToFit: pointsToFit, viewWidth: viewWidth, yPlotOffset: yPlotOffset, traceHeight: traceHeight, gfit: gfit, gaussianLayer: gaussianLayer , fitEventToStore: fitEventToStore!)
                             
                         case .sojourn : extendLineFit(locationOfBeganTap: locationOfBeganTap!, currentLocationOfTap: currentLocationOfTap!, pointsToFit: pointsToFit, viewWidth: viewWidth, yPlotOffset: yPlotOffset, traceHeight: traceHeight, fitLine: fitLine, fitEventToStore: fitEventToStore!)
@@ -540,7 +543,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 //only update the amplitude of a sojourn
                                 //in a way it's nonsense. We need a baseline and amplitude for other events
                                 if savedEvent?.kindOfEvent == .sojourn {
-                                        event.amplitude =  Double(incrementalTransformY) + Double((savedEvent?.amplitude!)!)
+                                        event.amplitude =  Double(incrementalTransformY + CGFloat((savedEvent?.amplitude!)!) / screenPointsPerPicoA!)
                                     }
                                 //update SSD and color for event
                                 event.fitSSD! = normalisedSSD
@@ -583,12 +586,12 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                 //screen points not real amplitude
                 
                 if fitEventToStore!.kindOfEntry == .sojourn {
-                    fitEventToStore!.amplitude = Double(averageY)
+                    fitEventToStore!.amplitude = Double(averageY / screenPointsPerPicoA!)
                 } else {
-                    fitEventToStore!.amplitude = Double(graphicalAmplitude)
+                    fitEventToStore!.amplitude = Double(CGFloat(graphicalAmplitude) / screenPointsPerPicoA!)
                 }
                 
-                //SSD and color are already stored during drag
+                //SSD and color are already stored during extending
                 print (fitEventToStore!.printable())
                 fitData.eventAppend(e: fitEventToStore!)
                 //store information in that links this layer to this event and vice versa
