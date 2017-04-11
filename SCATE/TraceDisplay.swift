@@ -19,10 +19,19 @@ struct Segment {
 
 class TraceDisplay: UIView {
     
+    //compression is the inverse of the step through the raw data
     var compression : CGFloat = 0.5 {
         didSet {
             setNeedsDisplay()
-            print("set")
+            print("set xCompression in TraceDisplay")
+        }
+    }
+    // vertical scale is the screen points per pA
+    var verticalScale : CGFloat = 200 {
+        didSet {
+        setNeedsDisplay()
+        print("set vertical Scale in TraceDisplay")
+        
         }
     }
     
@@ -35,7 +44,6 @@ class TraceDisplay: UIView {
 
 }
 
-// make classes for the x and y axes here, so they can be zoomed independently!
 
 
 class completionView: UIView {
@@ -79,6 +87,7 @@ class completionView: UIView {
         var segColor = seg.color                        //modulate on event type
 
         
+        //draw symbol for the specific type of events
         switch seg.kindOfEvent {
             case .transition :
                 segmentPath.addArc(withCenter: segmentStart, radius: 8, startAngle: 0, endAngle: CGFloat.pi * 2, clockwise: true) //radians
@@ -134,6 +143,7 @@ class completionView: UIView {
         tOffset = offset
         yPosition = CGFloat(y)
         screenPtsPerMs = samplePerMs
+        
         //clean out
         eventsToDraw = []
         

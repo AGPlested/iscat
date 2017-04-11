@@ -35,7 +35,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     var s = SettingsList()
     let ld = TraceIO()     //file retrieval
     let compView = completionView()
-    let calibratorView = UIView()
+    let xCalibratorView = UIView()
+    let yCalibratorView = UIView()
     let traceView = UIView()
     
     
@@ -96,20 +97,21 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         //v.compression is the fraction of the data points plotted
         //its inverse is the stride through the array of all points
         
+        
         let dataFileLength = arr.count
         let headerSize = s.header.getIntValue()
         traceLength = dataFileLength - headerSize
         let scaledTraceLength = Int (v.compression * CGFloat(traceLength!))
         
+        
+        //x calibration
         let calInScreenPts = Int (Float(v.compression) * Float(s.sampleRate.getFloatValue()) / 100) //calibration of 10 ms
-        
-        let nCalibrators = Int (scaledTraceLength / calInScreenPts) //same whatever the compression
-        
+        let nXCalibrators = Int (scaledTraceLength / calInScreenPts) //same whatever the compression
         var xC = 0
         
-        for i in 0..<nCalibrators {
+        for i in 0..<nXCalibrators {
         
-            //calibrator label
+            //calibrator labels
             let lab = UILabel()
             labelsOnXAxis.append(lab)   //store references for easy adjustment later
             lab.text = "\(i * 10)"      //each calibrator is 10 ms
@@ -119,8 +121,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             lab.frame.origin = CGPoint(x:xC+5, y:100)  //offset
             
             //x scale bar
-            let scale = xRuler()
-            let scaleLayer = scale.axisLayer(widthInScreenPoints: CGFloat(calInScreenPts), minorT: 4) //2 ms minor ticks
+            let xScale = xRuler()
+            let scaleLayer = xScale.axisLayer(widthInScreenPoints: CGFloat(calInScreenPts), minorT: 4) //2 ms minor ticks
             scaleLayer.frame.origin = CGPoint(x:xC, y:100)
             
             scaleLayer.strokeColor = UIColor.lightGray.cgColor
@@ -128,9 +130,49 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             scaleLayer.fillColor = nil
             scaleLayer.lineWidth = 1
             
-            calibratorView.addSubview(lab)
-            calibratorView.layer.addSublayer(scaleLayer)
+            xCalibratorView.addSubview(lab)
+            xCalibratorView.layer.addSublayer(scaleLayer)
             xC += calInScreenPts
+        }
+        
+        
+        //y calibration
+        //some amplitude conversion logic required!
+        
+        let gain = Float(s.gain.getFloatValue())  // mV per pA (alpha on the amplifier) 
+        //current working level is 10000. That's 100 ^ 2. Not sure where it comes from.
+        
+        let sixteenBit = Float(32536.0)    //standard parameters - to be removed to a safe distance later
+        let mVFullScale = Float(20000.0)
+        let screenPtsPerPicoA = v.verticalScale
+            
+        let DataPointsPerpA = CGFloat (gain * sixteenBit / mVFullScale)
+        print ("DPPpA:", DataPointsPerpA)
+        let nYCalibrators = Int(ceil(sv.bounds.height / screenPtsPerPicoA))
+        print ("nYCalibrators:", nYCalibrators)
+        var yC : CGFloat = 0
+        
+        for i in -1..<nYCalibrators {
+            let yLab = UILabel()
+            labelsOnXAxis.append(yLab)   //store references for easy adjustment later
+            yLab.text = "\(i)"      //each calibrator is 10 ms
+            yLab.textColor = UIColor.lightGray
+            yLab.font = yLab.font.withSize(14.0)
+            yLab.sizeToFit()
+            yLab.frame.origin = CGPoint(x:10, y:5 + yC)  //offset
+            
+            let yScale = yRuler()
+            //each calibrator is a pA
+            let yScaleLayer = yScale.axisLayer(heightInScreenPoints: screenPtsPerPicoA, minorT: 9)
+            yScaleLayer.frame.origin = CGPoint(x:0, y:yC )
+            
+            yScaleLayer.strokeColor = UIColor.lightGray.cgColor
+            yScaleLayer.lineJoin = kCALineJoinRound
+            yScaleLayer.fillColor = nil
+            yScaleLayer.lineWidth = 1
+            yCalibratorView.layer.addSublayer(yScaleLayer)
+            yCalibratorView.addSubview(yLab)
+            yC += screenPtsPerPicoA
         }
         
         let chunk = Int (Float(calInScreenPts) / Float(v.compression))
@@ -142,8 +184,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         
         print ("Drawing trace from \(s.dataFilename.getStringValue())")
         
-        var firstPoint = CGPoint(x:xp, y:200)           //xp is the x position
-        var drawnPoint = CGPoint(x:xp, y:200)
+        var firstPoint = CGPoint(x:xp, y: screenPtsPerPicoA)           //xp is the x position
+        var drawnPoint = firstPoint
         
         //draw them into a separate trace view that can be moved independently??
         for i in 0..<chunkN {
@@ -157,7 +199,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
                 pointIndex = index + headerSize + tStart + i * chunk
                 
                 //xp is separately scaled by tDrawScale
-                drawnPoint = CGPoint(x: xp + v.compression * CGFloat(index), y: CGFloat(200) * (1.0 + CGFloat(arr[pointIndex]) / 32536.0))
+                let yPoint = CGFloat(screenPtsPerPicoA * (1.0 + CGFloat(arr[pointIndex]) / DataPointsPerpA))
+                drawnPoint = CGPoint(x: xp + v.compression * CGFloat(index), y: yPoint)
                 tracePath.addLine(to: drawnPoint)
             }
             
@@ -178,7 +221,22 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
             xp += CGFloat(chunk) * v.compression
         }
         
+        
+        
         sv.addSubview(traceView)    // this should be redrawn with zoom?
+        sv.addSubview(compView)
+        sv.addSubview(xCalibratorView)
+        sv.addSubview(yCalibratorView)
+        
+        /*
+         
+         //fade out trace or something? Ugly behaviour with axis at the moment.
+        // want to change the mask but these don't work in a scroll view
+        compView.frame.origin.x += 20
+        xCalibratorView.frame.origin.x += 20
+        traceView.frame.origin.x += 20
+        */
+        
         
         var sz = sv.bounds.size     //Not sure what these three lines do any more.
         sz.width = xp
@@ -194,18 +252,10 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         traceArray = ld.loadData(dataFilename : s.dataFilename.getStringValue())
         //print (trace[0])
         traceView(arr: traceArray)
-        sv.addSubview(compView)
-        sv.addSubview(calibratorView)
         sv.bouncesZoom = false
         statusLabel.text = "No fit yet"
         updateLabels()
-        
-        /*
-        if masterEventList.count() != 0 {
-            compView.updateSegments(eventL: masterEventList, y: 150, samplePerMs: Float (v.tDrawScale) * Float (s.sampleRate.getFloatValue()) / 1000.0)
-        }
-        //samplePerMs here is a misnomer - it's actually samples drawn on the screen per ms
-        */
+
         recentFitsTable.dataSource = self
         recentFitsTable.delegate = self
         
@@ -245,7 +295,6 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
     
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return v
-        
     }
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -255,7 +304,9 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         
         //need to incorporate a small amount of pan, based on content
         //function to check reasonable content bounds
-    
+        
+        yCalibratorView.layer.position.x = sv.contentOffset.x
+        
         if sv.contentOffset.y != 0 {
             let resetOffset = CGPoint (x: sv.contentOffset.x, y: 0)
             sv.setContentOffset(resetOffset, animated: false)
@@ -268,17 +319,9 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         sz.width = xp * scale
         sz.height *= scale  //reset size of view
         sv.contentSize = sz
-        
-        /*
-        //modulate axis ticklabels by zoomScale when view gets tiny
-        for axisLabel in labelsOnXAxis {
-            let tickFontSize = max ((14.0 / sv.zoomScale), 14.0)
-            axisLabel.font = axisLabel.font.withSize(tickFontSize)
-            axisLabel.sizeToFit() //no clipping please
-        }
-        */
+
         updateLabels()
-        //compView.zoomScale = sv.zoomScale //not the right answer!
+        
         
         print ("Content width after resize: ", sv.contentSize.width, ". Offset after resize:" , sv.contentOffset.x)
         sv.isUserInteractionEnabled = true
@@ -300,28 +343,19 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         
         let zoomFactor = (sv.zoomScale / self.originalZoom)   // relative to original zoom during transition
       
-        //affine transform was updated on view to make only x-zooming
         sv.contentOffset = CGPoint(x:self.offset.x * zoomFactor + sv.bounds.width / 2 * (zoomFactor - 1), y:sv.contentOffset.y)
-        //traceView.transform = tVOriginalTransform.original //resetting otherwise cumulation nightmare
         
-        //traceView.frame.offsetBy(dx:0, dy:100 * log(zoomFactor))
-        //update progress counter but with special values
+        yCalibratorView.layer.position.x = sv.contentOffset.x
         
-        //to get the progress meter correct, the
+        //to update the progress meter correctly, the
         //original content size must be scaled by the zoom factor during the zoom
-        
         progress = 100 * Float(sv.contentOffset.x) / Float(self.originalContentSize.width * zoomFactor)
+        
         updateLabels()
         
-        //http://stackoverflow.com/questions/22395712/making-an-animation-to-expand-and-shrink-an-uiview
-        
-        
-        
-        // OLD traceView.transform = traceView.transform.translatedBy(x: 0, y: -(log(self.sv.zoomScale) * 150 + pow((self.sv.zoomScale-1),2) * 10))
-        
-        let traceViewYCompensation = (1 - self.sv.zoomScale) * 180//180 is the view center?, should make it a parameter
- 
-        //compensate movement
+        //compensate movement in y
+        let traceViewYCompensation = (1 - self.sv.zoomScale) * 180
+        //180 is the view center?, should make it a parameter
         traceView.transform = CGAffineTransform(translationX: 0, y: traceViewYCompensation)
         
         traceView.transform = traceView.transform.scaledBy(x: self.sv.zoomScale, y: self.sv.zoomScale)
@@ -329,24 +363,29 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         //print (traceView.transform.ty, traceViewYCompensation, tVOriginalTransform.original.ty)
         
         compView.transform = CGAffineTransform(scaleX: self.sv.zoomScale, y: 1)
-        calibratorView.transform = CGAffineTransform(scaleX: self.sv.zoomScale, y: 1)
         
-        for subView in calibratorView.subviews {
+        xCalibratorView.transform = CGAffineTransform(scaleX: self.sv.zoomScale, y: 1)
+        
+        for subView in xCalibratorView.subviews {
             
             subView.transform = CGAffineTransform(translationX: 2 * (self.sv.zoomScale - 1), y: 2 * (1 - self.sv.zoomScale))
             subView.transform = subView.transform.scaledBy(x: 1 / self.sv.zoomScale, y: 1)
             //scale the text back
-            //cast to access label : 
-            //http://stackoverflow.com/questions/26232170/trying-to-access-labels-from-uiview
-            /*let newFontSize = 14.0 / sv.zoomScale
-            if let tickLabel = subView as? UILabel {
-                tickLabel.font = tickLabel.font.withSize(newFontSize)
-            }
-            */
+        }
+        
+        //y calibrator must follow trace precisely
+        yCalibratorView.transform = CGAffineTransform(translationX: 0, y: traceViewYCompensation)
+        yCalibratorView.transform = yCalibratorView.transform.scaledBy(x: 1, y: self.sv.zoomScale)
+        
+        for subView in yCalibratorView.subviews {
+            //scale the text back
+            subView.transform = CGAffineTransform(scaleX: 1, y: 1 / self.sv.zoomScale)
         }
     }
 
-    //mark actions
+    //
+    // returning from other views
+    //
     
     func EventsVCDidFinish(controller: EventsViewController, updatedEvents: eventList) {
         print ("Events returned", updatedEvents)
@@ -410,6 +449,10 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         controller.dismiss(animated: true, completion: {})
     }
     
+    
+    
+    
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "FitViewSegue"
         {
@@ -423,6 +466,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
                 destinationVC.settings = s
                 let dataLength = Float(traceLength!) // not scaled
                 
+                
+                // should pass pA calibrator as well. Simple as sPPPa * zoomscale?
                 // in ms
                 let leftEdge = (dataLength / Float(samplesPerMillisecond)) * (self.progress / 100 )  //progress is percentage
                 let rightEdge = leftEdge + dataLength * Float(sv.bounds.width / sv.contentSize.width) / Float(samplesPerMillisecond)

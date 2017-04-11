@@ -32,7 +32,7 @@ class SettingsList  {
     
     //amplifier gain
     var gain = SettingsItem(text: "Gain (α)",
-                                  sValue: .float(100))
+                                  sValue: .float(10000))
     
     //working directory
     var workingPath = SettingsItem(text: "Working Path",
