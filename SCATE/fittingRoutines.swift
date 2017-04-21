@@ -124,6 +124,8 @@ func extendStepEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint,
     
     let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
     
+    print (screenStep.count, target.count)
+    
     let SSD_size = Float(target.count)
     let normalisedSSD = calculateSSD (A: screenStep, B: target) / SSD_size
     // bad fit is red, good fit is green
@@ -323,6 +325,7 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     
     //event should be the original stored event from the start of the drag
     //not the one being updated on the fly
+    //x is all that matters for dragging
     let startDragX = Float(firstTouch.x)
     let currentDragX = Float(currentTouch.x)
     let pPSP = Float(viewPoints.count) / viewW
@@ -342,8 +345,9 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     
     
     let shiftInDataPoints = Int((currentDragX - startDragX) * pPSP ) //will be +ve if drag is to the right, screen points scaled to data points
-    //print ("sIDP, pPSP, brim, kHW, OLI, ORI", shiftInDataPoints, pPSP , brim, kernelHalfWidth, originalLeftIndex, originalRightIndex)
+    print ("sIDP, pPSP, brim, kHW, OLI, ORI", shiftInDataPoints, pPSP , brim, kernelHalfWidth, originalLeftIndex, originalRightIndex)
     
+    //29 points to the left?
     //these will be wrong for transition
     var leftIndex   = originalLeftIndex + shiftInDataPoints - brim
     var rightIndex  = originalRightIndex + shiftInDataPoints + brim 

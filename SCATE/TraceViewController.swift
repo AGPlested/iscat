@@ -228,15 +228,9 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         sv.addSubview(xCalibratorView)
         sv.addSubview(yCalibratorView)
         
-        /*
+        
          
          //fade out trace or something? Ugly behaviour with axis at the moment.
-        // want to change the mask but these don't work in a scroll view
-        compView.frame.origin.x += 20
-        xCalibratorView.frame.origin.x += 20
-        traceView.frame.origin.x += 20
-        */
-        
         
         var sz = sv.bounds.size     //Not sure what these three lines do any more.
         sz.width = xp
@@ -321,7 +315,6 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         sv.contentSize = sz
 
         updateLabels()
-        
         
         print ("Content width after resize: ", sv.contentSize.width, ". Offset after resize:" , sv.contentOffset.x)
         sv.isUserInteractionEnabled = true

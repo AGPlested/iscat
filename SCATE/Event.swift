@@ -273,7 +273,7 @@ struct eventList {
         let s = startRange
         let e = endRange
         return list.filter ({
-            if s < $0.timePt && e > $0.timePt { return true }; return false })
+            if s < $0.timePt && e > $0.timePt ||  s < $0.timePt + $0.duration! && e > $0.timePt + $0.duration! { return true }; return false })
     }
     
     func listOfOpenings () -> [Event] {
