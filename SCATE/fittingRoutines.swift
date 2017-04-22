@@ -274,7 +274,7 @@ func checkIndices (left: Int, right: Int, leftEdge: Int = 0, rightEdge: Int) -> 
 func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
     
     //slice is wrong
-    let ears = max (Int(kernelHalfWidth + 10), 15)
+    let ears = Int(kernelHalfWidth * 2)
     
     let leftTap = min (Float(firstTouch.x), Float(currentTouch.x))
     let rightTap = max (Float(firstTouch.x), Float(currentTouch.x))
@@ -309,7 +309,7 @@ func getStepSliceExtending (firstTouch: CGPoint, currentTouch: CGPoint, viewPoin
     let dataPointsPerScreenPoint = Float(viewPoints.count) / viewW
     
     // should ears should be based on the original gfit width? (would need to pass it)
-    let ears = max (Int(kernelHalfWidth + 10), 15)
+    let ears = kernelHalfWidth * 2
     
     var leftIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) - ears
     var rightIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) + ears
@@ -342,7 +342,7 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     
     //if we have a filtered event, need to add the auto-generated brim.
     if kernelHalfWidth != 0 {
-        brim = max (Int(kernelHalfWidth + 10), 15)
+        brim = Int(kernelHalfWidth * 2)
         
     }
     
@@ -350,8 +350,8 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     let shiftInDataPoints = Int((currentDragX - startDragX) * pPSP ) //will be +ve if drag is to the right, screen points scaled to data points
     print ("sIDP, pPSP, brim, kHW, OLI, ORI", shiftInDataPoints, pPSP , brim, kernelHalfWidth, originalLeftIndex, originalRightIndex)
     
-    //29 points to the left?
-    //these will be wrong for transition
+    
+    
     var leftIndex   = originalLeftIndex + shiftInDataPoints - brim
     var rightIndex  = originalRightIndex + shiftInDataPoints + brim 
     

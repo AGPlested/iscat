@@ -36,8 +36,10 @@ class GaussianFit {
     
     func step (height: Float, back: Bool) -> [Float] {
         //with these strange parameters, the dragged out step looks good.
-        let ears = max ((Int(pow (abs(height), 0.7))), 25)
-        print ("step ears \(ears)")
+        //but only because the gaussian kernel is a certain width
+        //let ears = max ((Int(pow (abs(height), 0.7))), kernel.count)
+        let ears  = kernel.count * 2
+        //print ("step ears \(ears)")
         let stepTo = Array<Float>(repeating: height, count: ears)
         let stepBase = Array<Float>(repeating: 0, count: ears)
         
@@ -49,7 +51,7 @@ class GaussianFit {
     }
     
     func topHat (width: Int, height: Float) -> [Float] {
-        let brimW = max ((Int(pow (abs(height), 0.7))), 25) //always draw something, even at small heights
+        let brimW = max ((Int(pow (abs(height), 0.7))), kernel.count) //always draw something, even at small heights
         let hat = Array<Float>(repeating: height, count: width)
         let brim = Array<Float>(repeating: 0.0, count: brimW)
         return brim + hat + brim
@@ -99,17 +101,18 @@ class GaussianFit {
         //this trimming should also be applied for the top hat
         
         //narrow step default
+        //this never happens any more? 
         var leftTrimPoint = Int(Float(filteredStep.count) * 0.4)
         var rightTrimPoint = Int(Float(filteredStep.count) * 0.6)
         
         //wide step limit
-        //centred on filtered step, adding half a kernel + 10 pts window each way
+        //centred on filtered step, adding a window of a filter kernel each way
         if filteredStep.count > 2 * kernel.count {
-            leftTrimPoint = filteredStep.count / 2 - kernel.count / 2 - 10
-            rightTrimPoint = filteredStep.count / 2 + kernel.count / 2 + 10
+            leftTrimPoint = filteredStep.count  / 2 - kernel.count
+            rightTrimPoint = filteredStep.count / 2 + kernel.count
         }
         
-        filteredStep = Array(filteredStep[leftTrimPoint...rightTrimPoint])
+        filteredStep = Array(filteredStep[leftTrimPoint..<rightTrimPoint])
         
         let fringe =  Float(filteredStep.count) * screenPPDP / 2
         //need to move drawn curve left in x by this much
@@ -166,10 +169,10 @@ class GaussianFit {
         var rightTrimPoint = Int(Float(filteredTopHat.count) * 0.6)
         
         //wide top hat limit
-        //centred on filtered top hat, adding a kernel + 10 pts window each way
+        //centred on filtered top hat, adding a kernel window each way
         if filteredTopHat.count > 2 * kernel.count {
-            leftTrimPoint = (filteredTopHat.count - iWidth - kernel.count) / 2 - 10
-            rightTrimPoint = (filteredTopHat.count + iWidth + kernel.count) / 2  + 10
+            leftTrimPoint = (filteredTopHat.count - iWidth ) / 2 - kernel.count
+            rightTrimPoint = (filteredTopHat.count + iWidth ) / 2  + kernel.count
         }
         
         //trimmed slice
