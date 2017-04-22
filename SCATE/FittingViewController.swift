@@ -430,7 +430,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                             
                             case .opening, .shutting :
                                 //create filtered tophat event layer
-                                gaussianPath = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!)
+                                gaussianPath = gfit.buildTopHatGaussPath(screenPPDP: screenPointsPerDataPoint!, firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!)
                                 gaussianLayer = gfit.buildGaussLayer(gPath: gaussianPath)
                                 gaussianLayer.localID = localCreationID
                                 FitView.layer.addSublayer(gaussianLayer)

@@ -117,6 +117,7 @@ func extendStepEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint,
     
     let  screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
     
+    //get the step slice using the width of the filtered step?
     let targetDataPoints = getStepSliceExtending(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
     
     let lastDrawnFilteredStep = gfit.filteredStep
@@ -157,6 +158,8 @@ func extendTopHatEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoin
     
     let  screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
     
+    //why not just take the slice to be the width of the last filteredTopHat?
+    
     let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
     
     let lastDrawnFilteredTopHat = gfit.filteredTopHat
@@ -177,7 +180,7 @@ func extendTopHatEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoin
     // draw the latest curve, colored to previous SSD.
     CATransaction.begin()
     CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
-    gaussianLayer.path = gfit.buildGaussPath(screenPPDP: screenPointsPerDataPoint, firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap)
+    gaussianLayer.path = gfit.buildTopHatGaussPath(screenPPDP: screenPointsPerDataPoint, firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap)
     gaussianLayer.drawnPathPoints = gfit.drawnPath
     gaussianLayer.strokeColor = color.cgColor
     CATransaction.commit()
@@ -271,7 +274,7 @@ func checkIndices (left: Int, right: Int, leftEdge: Int = 0, rightEdge: Int) -> 
 func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
     
     //slice is wrong
-    let ears = max ((Int(pow (abs(firstTouch.y - currentTouch.y), 0.7))), 25)
+    let ears = max (Int(kernelHalfWidth + 10), 15)
     
     let leftTap = min (Float(firstTouch.x), Float(currentTouch.x))
     let rightTap = max (Float(firstTouch.x), Float(currentTouch.x))
@@ -295,18 +298,18 @@ func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints
 }
 
 func getStepSliceExtending (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
-    
+    /*
     //this is way too simplistic right now - have to calculate in detailllll
     let baseTap = min (Float(firstTouch.y), Float(currentTouch.y))
     let finalTap = max (Float(firstTouch.y), Float(currentTouch.y))
     
     //normalizing by view width (viewW) removes the need to scale
     //indices are extended by the half-width of the Gaussian filtering kernel.
-    
+    */
     let dataPointsPerScreenPoint = Float(viewPoints.count) / viewW
-    //let ears = max (Int((finalTap - baseTap) / 5), 3)
-    let ears = max ((Int(pow (abs(finalTap - baseTap), 0.7))), 25)
     
+    // should ears should be based on the original gfit width? (would need to pass it)
+    let ears = max (Int(kernelHalfWidth + 10), 15)
     
     var leftIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) - ears
     var rightIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) + ears
@@ -316,7 +319,7 @@ func getStepSliceExtending (firstTouch: CGPoint, currentTouch: CGPoint, viewPoin
     (leftIndex, rightIndex) = checkIndices (left: leftIndex, right: rightIndex, leftEdge: 0, rightEdge: viewPoints.count)
     
     let fittingSlice = Array(viewPoints[leftIndex..<rightIndex])
-    //shorter than the filtered top hat? Fixed?
+    
     return fittingSlice
 }
 
@@ -325,7 +328,7 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     
     //event should be the original stored event from the start of the drag
     //not the one being updated on the fly
-    //x is all that matters for dragging
+    //x is all that matters for getting data slice dragging
     let startDragX = Float(firstTouch.x)
     let currentDragX = Float(currentTouch.x)
     let pPSP = Float(viewPoints.count) / viewW
@@ -339,8 +342,8 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     
     //if we have a filtered event, need to add the auto-generated brim.
     if kernelHalfWidth != 0 {
-        brim = max ((Int(pow (abs(e.amplitude!), 0.7))), 25)
-        //amplitude is local and in screen points?
+        brim = max (Int(kernelHalfWidth + 10), 15)
+        
     }
     
     

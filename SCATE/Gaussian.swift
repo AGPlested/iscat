@@ -35,10 +35,9 @@ class GaussianFit {
     }
     
     func step (height: Float, back: Bool) -> [Float] {
-        //let h = height
         //with these strange parameters, the dragged out step looks good.
-        let ears = max ((Int(pow (abs(height), 0.7))), 25) //always draw something, even at small heights
-        print ("ears \(ears)")
+        let ears = max ((Int(pow (abs(height), 0.7))), 25)
+        print ("step ears \(ears)")
         let stepTo = Array<Float>(repeating: height, count: ears)
         let stepBase = Array<Float>(repeating: 0, count: ears)
         
@@ -50,16 +49,10 @@ class GaussianFit {
     }
     
     func topHat (width: Int, height: Float) -> [Float] {
-        //let h = height
-        //let w = width
-        let brimW = max ((Int(pow (abs(height), 0.7))), 25)
-        
-        var hat = Array<Float>(repeating: height, count: width)
-        if brimW > 0 {
-            let brim = Array<Float>(repeating: 0.0, count: brimW)
-            hat = brim + hat + brim
-        }
-        return hat
+        let brimW = max ((Int(pow (abs(height), 0.7))), 25) //always draw something, even at small heights
+        let hat = Array<Float>(repeating: height, count: width)
+        let brim = Array<Float>(repeating: 0.0, count: brimW)
+        return brim + hat + brim
     }
     
     func gaussian (x: Float, a: Float, b: Float, c: Float) -> Float32 {
@@ -100,36 +93,36 @@ class GaussianFit {
         }
         
         let stepInput = step(height: amp, back: back)
-        
         filteredStep = filterConvolution(x: stepInput, k: kernel)
         
-        //trim step
-        //var filteredStepTrimmed = [Float]()
+        // need to unify, and clarify.
+        //this trimming should also be applied for the top hat
         
         //narrow step default
         var leftTrimPoint = Int(Float(filteredStep.count) * 0.4)
         var rightTrimPoint = Int(Float(filteredStep.count) * 0.6)
         
-        //wide step limit (adding a couple of points beyond the kernel
+        //wide step limit
+        //centred on filtered step, adding half a kernel + 10 pts window each way
         if filteredStep.count > 2 * kernel.count {
             leftTrimPoint = filteredStep.count / 2 - kernel.count / 2 - 10
             rightTrimPoint = filteredStep.count / 2 + kernel.count / 2 + 10
         }
         
-        let filteredStepTrimmed = filteredStep[leftTrimPoint...rightTrimPoint]
+        filteredStep = Array(filteredStep[leftTrimPoint...rightTrimPoint])
         
-        let fringe =  Float(filteredStepTrimmed.count) * screenPPDP / 2
-        //need to move drawn curve left in x by this much^^^ way too much
-        let xc = filteredStepTrimmed.count
+        let fringe =  Float(filteredStep.count) * screenPPDP / 2
+        //need to move drawn curve left in x by this much
+        let xc = filteredStep.count
         let xf = Array(0...xc)
-        let xfs = xf.map {x in Float(x) * screenPPDP}
+        let xfs = xf.map {x in Float(x) * screenPPDP} //could subtract fringe here
         let gaussPath = UIBezierPath()
         
         //draw left to right
         var firstPoint = CGPoint()
         
         if back == true {
-            // if its a right to left pan, drawing left to right means 
+            // if it's a right to left pan, drawing left to right means
             // drawing from the end to the beginning - in terms of y...
             // otherwise we draw |/ or |\ rather than just / or \
             
@@ -141,18 +134,18 @@ class GaussianFit {
         gaussPath.move(to: firstPoint)
         
         drawnPath = []
-        for (xp, yp) in zip(xfs, filteredStepTrimmed) {
+        for (xp, yp) in zip(xfs, filteredStep) {
             let gaussPoint = CGPoint (x:Double(position - fringe + xp), y:Double(base - yp))
             gaussPath.addLine(to: gaussPoint)
             drawnPath.append(gaussPoint)
         }
         
-        print ("drawnPath", drawnPath)
+        //print ("drawnPath", drawnPath)
         return gaussPath.cgPath
     }
     
-    
-    func buildGaussPath (screenPPDP: Float, firstTouch: CGPoint, currentTouch: CGPoint) -> CGPath {
+    //why not unify this path parameterisation with above and pull out path construction?
+    func buildTopHatGaussPath (screenPPDP: Float, firstTouch: CGPoint, currentTouch: CGPoint) -> CGPath {
 
         // screenPPDP is the number of screen points per data point - to keep filtering constant
         // float for maths later
@@ -166,9 +159,26 @@ class GaussianFit {
         
         filteredTopHat = filterConvolution(x: topHatInput, k: kernel)
         
-        let fringe =  Float(filteredTopHat.count - iWidth) * screenPPDP / 2
-        //need to move drawn curve left in x by this much.
+        //this trimming should also be applied for the top hat
+        
+        //narrow top hat default
+        var leftTrimPoint = Int(Float(filteredTopHat.count) * 0.4)
+        var rightTrimPoint = Int(Float(filteredTopHat.count) * 0.6)
+        
+        //wide top hat limit
+        //centred on filtered top hat, adding a kernel + 10 pts window each way
+        if filteredTopHat.count > 2 * kernel.count {
+            leftTrimPoint = (filteredTopHat.count - iWidth - kernel.count) / 2 - 10
+            rightTrimPoint = (filteredTopHat.count + iWidth + kernel.count) / 2  + 10
+        }
+        
+        //trimmed slice
+        filteredTopHat = Array(filteredTopHat[leftTrimPoint...rightTrimPoint])
+        
         let xc = filteredTopHat.count
+        let fringe =  Float(xc - iWidth) * screenPPDP / 2
+        //need to move drawn curve left in x by this much.
+        
         let xf = Array(0...xc)
         let xfs = xf.map {x in Float(x) * screenPPDP}
         let gaussPath = UIBezierPath()

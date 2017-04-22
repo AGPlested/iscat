@@ -461,7 +461,8 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
                 destinationVC.screenPointsPerPicoA = sv.zoomScale * v.verticalScale
 
                 // should pass pA calibrator as well. Simple as sPPPa * zoomscale?
-                // in ms
+                
+                // edges of displayed trace in ms
                 let leftEdge = (dataLength / Float(samplesPerMillisecond)) * (self.progress / 100 )  //progress is percentage
                 let rightEdge = leftEdge + dataLength * Float(sv.bounds.width / sv.contentSize.width) / Float(samplesPerMillisecond)
                 
@@ -473,7 +474,7 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
                 let rightPoint = leftPoint + Int(dataLength * Float(sv.bounds.width / sv.contentSize.width))
                 print ("lP, rP, lE, rE, rP-lP, tA.c, b.w, cS.w :", leftPoint, rightPoint, leftEdge, rightEdge, rightPoint-leftPoint, traceArray.count, sv.bounds.width, sv.contentSize.width) //these points are a bit off??
                 
-                let fitSlice = Array(self.traceArray[leftPoint..<rightPoint])
+                let fitSlice = Array(traceArray[leftPoint..<rightPoint])
                 //print (fitSlice.count, sv.bounds.width / sv.contentSize.width, dataLength * Float(sv.bounds.width / sv.contentSize.width) )
                 destinationVC.pointsToFit = fitSlice
                 destinationVC.delegate = self
