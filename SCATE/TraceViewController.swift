@@ -250,6 +250,9 @@ class TraceViewController: UIViewController, UIScrollViewDelegate, UITableViewDa
         statusLabel.text = "No fit yet"
         updateLabels()
 
+        let textTrial = TextIO()
+        textTrial.trial()
+        
         recentFitsTable.dataSource = self
         recentFitsTable.delegate = self
         

@@ -59,32 +59,29 @@ func pathOfFitLine(startPt: CGPoint, endPt: CGPoint) -> CGPath {
 
 func extendLineFit(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, pointsToFit: [Int16], viewWidth: CGFloat, yPlotOffset: CGFloat, traceHeight: CGFloat, fitLine: CustomLayer , fitEventToStore: Event ){
 
-    let  screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
-        //allow the user to correct the Y-position (line remains horizontal)
+    let screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
+    //allow the user to correct the Y-position whilst extending (line remains horizontal)
     let averageY = (locationOfBeganTap.y + currentLocationOfTap.y) / 2
     let startPoint = CGPoint(x: (locationOfBeganTap.x)  , y: averageY)
     let endPoint = CGPoint(x: (currentLocationOfTap.x) , y: averageY)
 
     //no filter so no kernel
-    let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: 0)
+    let targetDataPoints = getSliceExtending(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelWidth: 0)
     let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
 
-
-    // produce the array of points representing the fitLine.
+    // produce an array of screen points representing the fitting Line.
     let SSD_size = target.count
-
     let fitLineArray = Array(repeating: Float(averageY), count: SSD_size)
-    let xc = fitLineArray.count
-    let xf = Array(0...xc)
+    let xf = Array(0...SSD_size)
     //ugly. This logic is performed in the getDataFittingSlice too.
     let xfs = xf.map {x in Float(x) * screenPointsPerDataPoint + Float(min(locationOfBeganTap.x, currentLocationOfTap.x))}
 
+    //store these points in the CustomLayer data structure for the next iteration
     var drawnPath = [CGPoint]()
-    for (xp, yp) in zip (xfs,fitLineArray) {
+    for (xp, yp) in zip (xfs, fitLineArray) {
         let fitLinePoint = CGPoint (x: CGFloat(xp), y: CGFloat(yp))
         drawnPath.append(fitLinePoint)
     }
-
     fitLine.drawnPathPoints = drawnPath
 
     let normalisedSSD = calculateSSD (A: fitLineArray, B: target) / Float(SSD_size)
@@ -96,7 +93,6 @@ func extendLineFit(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, p
 
     //no animations
     //https://github.com/iamdoron/panABallAttachedToALine/blob/master/panLineRotation/ViewController.swift
-    //
     CATransaction.begin()
     CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
     fitLine.path = pathOfFitLine(startPt: startPoint, endPt: endPoint)
@@ -108,24 +104,23 @@ func extendLineFit(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, p
                                              lineCap: CGLineCap(rawValue: 0)!,
                                              lineJoin: CGLineJoin(rawValue: 0)!,
                                              miterLimit: 1) as! CGMutablePath
-
 }
 
 
 func extendStepEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, pointsToFit: [Int16], viewWidth: CGFloat, yPlotOffset: CGFloat, traceHeight: CGFloat, gfit: GaussianFit, gaussianLayer: CustomLayer, fitEventToStore: Event ) {
-    let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
+    let gaussianKernelWidth = gfit.kernel.count
     
     let  screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
     
     //get the step slice using the width of the filtered step?
-    let targetDataPoints = getStepSliceExtending(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
+    let targetDataPoints = getSliceExtendingTransition(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelWidth: gaussianKernelWidth)
     
     let lastDrawnFilteredStep = gfit.filteredStep
     let screenStep = lastDrawnFilteredStep.map {th in Float(locationOfBeganTap.y) - th}
     
     let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
     
-    print (screenStep.count, target.count)
+    print (screenStep.count, target.count) //should really assert here and make a fatal error if arrays are not the same size
     
     let SSD_size = Float(target.count)
     let normalisedSSD = calculateSSD (A: screenStep, B: target) / SSD_size
@@ -154,13 +149,13 @@ func extendStepEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint,
 }
 
 func extendTopHatEvent(locationOfBeganTap: CGPoint, currentLocationOfTap: CGPoint, pointsToFit: [Int16], viewWidth: CGFloat, yPlotOffset: CGFloat, traceHeight: CGFloat, gfit: GaussianFit, gaussianLayer: CustomLayer , fitEventToStore: Event   ) {
-    let gaussianKernelHalfWidth = Int (0.5 * Float(gfit.kernel.count) )
+    let gaussianKernelWidth = gfit.kernel.count
     
     let  screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
     
     //why not just take the slice to be the width of the last filteredTopHat?
     
-    let targetDataPoints = getFittingDataSlice(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
+    let targetDataPoints = getSliceExtending(firstTouch: locationOfBeganTap, currentTouch: currentLocationOfTap, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelWidth: gaussianKernelWidth)
     
     let lastDrawnFilteredTopHat = gfit.filteredTopHat
     let screenTopHat = lastDrawnFilteredTopHat.map {th in Float(locationOfBeganTap.y) - th}
@@ -210,18 +205,17 @@ func panArcEntry (first: CGPoint, current: CGPoint, arc: Float, openingsDown: Bo
     let g = panArcGesture(first: first, current: current, arc: arc)
     
     switch g {
-    
-    case .downDiag: if openingsDown {e = .opening} else {e = .shutting}
-         //downward movement on screen
-        
-    case .upDiag: if openingsDown {e = .shutting} else {e = .opening}
-        //upward movement on screen
-        
-    case .horizontalPan: e = .sojourn
-        
-    case .verticalPan: e = .transition
-        
-    default: print ("not resolved therefore event not classified")
+        case .downDiag: if openingsDown {e = .opening} else {e = .shutting}
+             //downward movement on screen
+            
+        case .upDiag: if openingsDown {e = .shutting} else {e = .opening}
+            //upward movement on screen
+            
+        case .horizontalPan: e = .sojourn
+            
+        case .verticalPan: e = .transition
+            
+        default: print ("not resolved therefore event not classified")
     }
     print ("pan Arc entry", g, e)
     return e
@@ -250,7 +244,7 @@ func panArcGesture (first: CGPoint, current: CGPoint, arc: Float) -> (PanGesture
     } else if angle > topHatArcHighBound {
         g = .verticalPan
     }
-    //something here is not working right now
+   
     print ("panArcGesture", g)
     return g
 }
@@ -271,86 +265,71 @@ func checkIndices (left: Int, right: Int, leftEdge: Int = 0, rightEdge: Int) -> 
 }
 
 
-func getFittingDataSlice (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
+func getSliceExtending (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelWidth: Int) -> [Int16] {
     
-    //slice is wrong
-    let ears = Int(kernelHalfWidth * 2)
+    //indices are extended by the width of the Gaussian filtering kernel.
+    //Zero if it's just a line.
+    //let ears = Int(kernelHalfWidth * 2)
     
+    //the event we are extending has some width based on the x-position of the initial and current touches
     let leftTap = min (Float(firstTouch.x), Float(currentTouch.x))
     let rightTap = max (Float(firstTouch.x), Float(currentTouch.x))
     
     //normalizing by view width (viewW) removes the need to scale
-    //indices are extended by the half-width of the Gaussian filtering kernel.
-    //Zero if it's just a line.
-    
     let dataPointsPerScreenPoint = Float(viewPoints.count) / viewW
     
-    var leftIndex   = Int(Float(leftTap) * dataPointsPerScreenPoint) - ears
-    var rightIndex   = Int(Float(rightTap) * dataPointsPerScreenPoint) + ears
+    var leftIndex   = Int(Float(leftTap) * dataPointsPerScreenPoint) - kernelWidth
+    var rightIndex   = Int(Float(rightTap) * dataPointsPerScreenPoint) + kernelWidth
     
     //check for edge here -protect against illegal indices
-    
     (leftIndex, rightIndex) = checkIndices (left: leftIndex, right: rightIndex, leftEdge: 0, rightEdge: viewPoints.count)
     
     let fittingSlice = Array(viewPoints[leftIndex..<rightIndex])
-    //shorter than the filtered top hat? Fixed?
     return fittingSlice
 }
 
-func getStepSliceExtending (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
-    /*
-    //this is way too simplistic right now - have to calculate in detailllll
-    let baseTap = min (Float(firstTouch.y), Float(currentTouch.y))
-    let finalTap = max (Float(firstTouch.y), Float(currentTouch.y))
-    
+ 
+func getSliceExtendingTransition (firstTouch: CGPoint, currentTouch: CGPoint, viewPoints: [Int16], viewW: Float, kernelWidth: Int) -> [Int16] {
+
     //normalizing by view width (viewW) removes the need to scale
-    //indices are extended by the half-width of the Gaussian filtering kernel.
-    */
     let dataPointsPerScreenPoint = Float(viewPoints.count) / viewW
     
-    // should ears should be based on the original gfit width? (would need to pass it)
-    let ears = kernelHalfWidth * 2
+    //let ears = kernelHalfWidth * 2
     
-    var leftIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) - ears
-    var rightIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) + ears
+    //indices are extended by the width of the Gaussian filtering kernel in each direction.
+    var leftIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) - kernelWidth
+    var rightIndex   = Int(Float(firstTouch.x) * dataPointsPerScreenPoint) + kernelWidth
     
     //check for edge here -protect against illegal indices
-    
     (leftIndex, rightIndex) = checkIndices (left: leftIndex, right: rightIndex, leftEdge: 0, rightEdge: viewPoints.count)
     
     let fittingSlice = Array(viewPoints[leftIndex..<rightIndex])
-    
     return fittingSlice
 }
 
-//not entirely right for all events but getting there
-func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEvent, viewPoints: [Int16], viewW: Float, kernelHalfWidth: Int) -> [Int16] {
+func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEvent, viewPoints: [Int16], viewW: Float, kernelWidth: Int) -> [Int16] {
+    //slice refers to the raw data used for live SSD comparison
     
-    //event should be the original stored event from the start of the drag
-    //not the one being updated on the fly
     //x is all that matters for getting data slice dragging
     let startDragX = Float(firstTouch.x)
     let currentDragX = Float(currentTouch.x)
     let pPSP = Float(viewPoints.count) / viewW
+    let shiftInDataPoints = Int((currentDragX - startDragX) * pPSP ) //will be +ve if drag is to the right, screen points scaled to data points
     
-    //stored values are in local screen points.
+    //stored values from the original event are in local screen points.
     let startTime = e.timePt
     let originalLeftIndex = Int(startTime * pPSP)
     let originalRightIndex = Int((startTime + e.duration!) * pPSP)
     
-    var brim = 0                                   //for the case of a line layer being dragged.
+    //default for the case of a line layer being dragged.
+    var brim = 0
     
-    //if we have a filtered event, need to add the auto-generated brim.
-    if kernelHalfWidth != 0 {
-        brim = Int(kernelHalfWidth * 2)
-        
+    //if we have a filtered event, need to add the filter kernel brim.
+    if kernelWidth != 0 {
+        brim = kernelWidth
     }
     
-    
-    let shiftInDataPoints = Int((currentDragX - startDragX) * pPSP ) //will be +ve if drag is to the right, screen points scaled to data points
-    print ("sIDP, pPSP, brim, kHW, OLI, ORI", shiftInDataPoints, pPSP , brim, kernelHalfWidth, originalLeftIndex, originalRightIndex)
-    
-    
+    print ("sIDP, pPSP, brim, kW, OLI, ORI", shiftInDataPoints, pPSP , brim, kernelWidth, originalLeftIndex, originalRightIndex)
     
     var leftIndex   = originalLeftIndex + shiftInDataPoints - brim
     var rightIndex  = originalRightIndex + shiftInDataPoints + brim 
@@ -360,11 +339,8 @@ func getSliceDuringDrag (firstTouch: CGPoint, currentTouch: CGPoint, e: StoredEv
     
     //print ("lIndex, rIndex: ", leftIndex, rightIndex)
     let slice = Array(viewPoints[leftIndex..<rightIndex])
-    //shorter than the filtered top hat? Fixed?
     return slice
-    
 }
-
 
 
 func calculateSSD (A: [Float], B:[Float]) -> Float {
@@ -382,11 +358,10 @@ func optimiseFit() -> [Int]{
     return [0]
 }
 
-//called when user starts a pan
+//called when user starts a horizontal pan gesture
 func createHorizontalLine (startTap: CGPoint!, endTap: CGPoint!) -> CustomLayer {
     
     print ("Drawing sojourn line:", startTap!, endTap!)
-    //rough conversion of y value
     let averageY = (startTap.y + endTap.y) / 2
     
     let startPoint = CGPoint(x: (startTap.x), y: averageY)

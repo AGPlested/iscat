@@ -71,6 +71,30 @@ class EventsViewController: UIViewController, UITableViewDataSource, UITableView
     }
    
     
+    @IBAction func saveToDropbox(_ sender: Any) {
+        let client = DropboxClientsManager.authorizedClient
+        var testData = "testing data example - saved by SCATE v0.1\n"
+        
+        for event in localEventsList.list {
+            testData += event.printable()
+            testData += "\n"
+        }
+        
+        let fileData:NSData? = testData.data(using: String.Encoding.utf8, allowLossyConversion: false) as NSData?
+        
+        let request = client?.files.upload(path: "/test.txt", input: fileData! as Data)
+            .response { response, error in
+                if let response = response {
+                    print(response)
+                } else if let error = error {
+                    print(error)
+                }
+            }
+            .progress { progressData in
+                print(progressData)
+        }
+    
+    }
     // MARK: - Table view data source
     
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {

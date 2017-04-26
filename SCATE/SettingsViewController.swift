@@ -18,26 +18,34 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
     
     @IBOutlet weak var settingsView: UIView!
     @IBOutlet weak var BackButton: UIButton!
-    @IBOutlet weak var tableView: UITableView!
     
+    //tables
+   
+    @IBOutlet weak var settingsTableView: UITableView!
+    @IBOutlet weak var DBFilesTableView: UITableView!
+    
+    let DBFileCellReuseID = "DBFile"
     let cellReuseID = "standardSetting"
     let sliderCellReuseID = "sliderSetting"
     let toggleCellReuseID = "toggleSetting"
     
     var localSettings : SettingsList?
     var settingsTableRows = [SettingsItem]()
+    var DBFileRows = [FilesItem]()
     var delegate: SettingsViewControllerDelegate? = nil
     var filenames: Array<String>?
   
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        
-        tableView.dataSource = self
-        tableView.delegate = self
-        
+        DBFilesTableView.dataSource = self
+        DBFilesTableView.delegate = self
+        settingsTableView.dataSource = self
+        settingsTableView.delegate = self
+
+
         // must *NOT* register the custom cell here if using interface builder!!!!!!
-        //tableView.register(CustomSettingCell.self, forCellReuseIdentifier: cellReuseIdentifier)
+
         
         if let client = DropboxClientsManager.authorizedClient {
             _ = client.files.listFolder(path: "").response { response, error in
@@ -46,7 +54,10 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
                     for entry in result.entries {
                         print(entry.name)
                         self.filenames?.append(entry.name)
+                        let fileDisplay = FilesItem(filename: entry.name, size: entry.description)
+                        self.DBFileRows.append(fileDisplay)
                         }
+                    self.DBFilesTableView.reloadData()
                     }
 
             }
@@ -79,60 +90,78 @@ class SettingsViewController: UIViewController, UITableViewDataSource, UITableVi
         let item = settingsTableRows[sender.tag]
         item.setValue(val: sender.value)
         //print (item, item.sVal, localSettings?.panAngleSensitivity)
-        tableView.reloadData()
+        settingsTableView.reloadData()
     }
     
+
     
-    // MARK: - Table view data source
+    // MARK: - Table view data sources
     
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
         return 1
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return settingsTableRows.count
+        
+        if tableView == settingsTableView {
+            return settingsTableRows.count
+        } else {
+            return DBFileRows.count
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if tableView == settingsTableView {
+            //dequeue different settings cells
+            let item = settingsTableRows[indexPath.row]
+            print (item)
+            switch item.sVal {
+                case .toggle:
+                    let cCell: ToggleSettingCell = tableView.dequeueReusableCell(withIdentifier: toggleCellReuseID, for: indexPath) as! ToggleSettingCell
+                    cCell.toggleLabel.text = "Toggle control"
+                    cCell.toggleSetting.isOn = true
+                    return cCell
+                
+                case .slider:
+                    let cCell: SliderSettingCell = tableView.dequeueReusableCell(withIdentifier: sliderCellReuseID, for: indexPath) as! SliderSettingCell
+                    
+                    cCell.settingSlider.value = Float(item.getFloatValue())
+                    cCell.sliderLabel.text =  item.textLabel
+                    cCell.sliderValue.text = String(format:"%.2f", item.getFloatValue())
+                    cCell.settingSlider.tag = indexPath.row
+                    cCell.settingSlider.addTarget(self, action: #selector(self.sliderChanged), for: .valueChanged)
+                    return cCell
+                    
+                case .float :
+                    let cCell: StandardSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseID, for: indexPath) as! StandardSettingCell
+                    cCell.standardValue.text =  "\(item.getFloatValue())"
+                    cCell.standardLabel.text = item.textLabel
+                    return cCell
+                
+                case .integer :
+                   let cCell: StandardSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseID, for: indexPath) as! StandardSettingCell
+                   cCell.standardValue.text = "\(item.getIntValue())"
+                   cCell.standardLabel.text = item.textLabel
+                   return cCell
+                
+                default :
+                    let cCell: StandardSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseID, for: indexPath) as! StandardSettingCell
+                    cCell.standardValue.text = item.getStringValue()
+                    cCell.standardLabel.text = item.textLabel
+                    return cCell
+            }
         
-        //dequeue different settings cells
-        let item = settingsTableRows[indexPath.row]
-        print (item)
-        switch item.sVal {
-            case .toggle:
-                let cCell: ToggleSettingCell = tableView.dequeueReusableCell(withIdentifier: toggleCellReuseID, for: indexPath) as! ToggleSettingCell
-                cCell.toggleLabel.text = "Toggle control"
-                cCell.toggleSetting.isOn = true
-                return cCell
+        } else {
+            //Dropbox File table
+            let item = DBFileRows[indexPath.row]
+            print (item)
+            let cCell: DBFileCell = tableView.dequeueReusableCell(withIdentifier: DBFileCellReuseID, for: indexPath) as! DBFileCell
+            cCell.filenameLabel.text = item.filename
+            cCell.fileSizeLabel.text = item.size
+            return cCell
             
-            case .slider:
-                let cCell: SliderSettingCell = tableView.dequeueReusableCell(withIdentifier: sliderCellReuseID, for: indexPath) as! SliderSettingCell
-                
-                cCell.settingSlider.value = Float(item.getFloatValue())
-                cCell.sliderLabel.text =  item.textLabel
-                cCell.sliderValue.text = String(format:"%.2f", item.getFloatValue())
-                cCell.settingSlider.tag = indexPath.row
-                cCell.settingSlider.addTarget(self, action: #selector(self.sliderChanged), for: .valueChanged)
-                return cCell
-                
-            case .float :
-                let cCell: StandardSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseID, for: indexPath) as! StandardSettingCell
-                cCell.standardValue.text =  "\(item.getFloatValue())"
-                cCell.standardLabel.text = item.textLabel
-                return cCell
-            
-            case .integer :
-               let cCell: StandardSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseID, for: indexPath) as! StandardSettingCell
-               cCell.standardValue.text = "\(item.getIntValue())"
-               cCell.standardLabel.text = item.textLabel
-               return cCell
-            
-            default :
-                let cCell: StandardSettingCell = tableView.dequeueReusableCell(withIdentifier: cellReuseID, for: indexPath) as! StandardSettingCell
-                cCell.standardValue.text = item.getStringValue()
-                cCell.standardLabel.text = item.textLabel
-                return cCell
         }
+
     }
     
     @IBAction func backToMain(_ sender: Any) {

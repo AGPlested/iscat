@@ -111,6 +111,8 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
         
         fitTraceView(FitView: FitView, viewWidth: viewWidth, pointsToFit: pointsToFit, yOffset: yPlotOffset, traceHeight: traceHeight)
         
+        //draw axes
+        
         screenPointsPerDataPoint = Float(viewWidth) / Float(pointsToFit.count)
         screenPointsPerMillisecond = screenPointsPerDataPoint! * Float(settings.sampleRate.getFloatValue()) / 1000.0
         positionLabel.text = "Position in trace \(progressCounter) %"
@@ -480,14 +482,14 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                                 print ("dragging custom layer \(cLayer.localID!)")
                                 var targetDataPoints = [Int16]()
                                 
-                                var gaussianKernelHalfWidth = Int(gfit.kernel.count / 2)
+                                var gaussianKernelWidth = gfit.kernel.count
                                 
                                 if event.kindOfEntry == .sojourn {
-                                    gaussianKernelHalfWidth = 0
+                                    gaussianKernelWidth = 0
                                 }
                                 
                                 //pass initial event to get start of event at start of drag, not the updating event
-                                targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelHalfWidth: gaussianKernelHalfWidth)
+                                targetDataPoints = getSliceDuringDrag(firstTouch: locationOfBeganTap!, currentTouch: currentLocationOfTap!, e: selectedEvents[cLayer.localID!]!, viewPoints: pointsToFit, viewW: Float(viewWidth), kernelWidth: gaussianKernelWidth)
                                
                                 let target : [Float] = targetDataPoints.map { t in Float(yPlotOffset + traceHeight * CGFloat(t) / 32536.0 )} //to get screen point amplitudes
                                 
@@ -644,8 +646,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
     }
 
     @IBAction func goBack(_ sender: Any) {
-        print ("Store button")
-        //pan count is not used any more.
+        print ("Store and go back button")
         delegate?.FitVCDidFinish(controller: self, leftEdge: leftEdgeTime!, fit: fitData)
         
     }

@@ -8,6 +8,11 @@
 
 import Foundation
 
+struct FilesItem {
+    var filename : String
+    var size : String
+}
+
 class TraceIO {
     /*
     func prepareForTrace() {
@@ -46,4 +51,29 @@ class TraceIO {
 
     }
     
+}
+
+class TextIO {
+    
+    func trial() {
+        let trialOutputText = "If you like you can marry me, and if you like, you can buy the ring"
+        let fileManager = FileManager.default
+        let documentsURL = try! fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+        let fileURL = documentsURL.appendingPathComponent("williamItWasReallyNothing.txt")
+        
+        do {
+            try trialOutputText.write(to: fileURL, atomically: false, encoding: .utf8)
+            print ("Wrote the following Smiths lyrics to \(fileURL): \(trialOutputText)")
+        } catch {
+            print("Failed writing to URL: \(fileURL), Error: " + error.localizedDescription)
+        }
+        var inString = ""
+        do {
+            inString = try String(contentsOf: fileURL)
+        } catch {
+            print("Failed reading from URL: \(fileURL), Error: " + error.localizedDescription)
+        }
+        print("Read the following Smiths lyrics from \(fileURL): \(inString)")
+        
+    }
 }

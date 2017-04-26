@@ -42,6 +42,14 @@ class SliderSettingCell: UITableViewCell {
 }
 
 
+//cells for Dropbox File Browser Table
+
+class DBFileCell: UITableViewCell {
+    @IBOutlet weak var DBFileContentView: UIView!
+    @IBOutlet weak var filenameLabel: UILabel!
+    @IBOutlet weak var fileSizeLabel: UILabel!
+}
+
 //cells for event tables
 //these cells are on the main screen 
 
