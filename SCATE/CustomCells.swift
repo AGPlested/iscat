@@ -44,10 +44,12 @@ class SliderSettingCell: UITableViewCell {
 
 //cells for Dropbox File Browser Table
 
-class DBFileCell: UITableViewCell {
-    @IBOutlet weak var DBFileContentView: UIView!
+class FileListCell: UITableViewCell {
+    
+    @IBOutlet weak var fileListContentView: UIView!
     @IBOutlet weak var filenameLabel: UILabel!
     @IBOutlet weak var fileSizeLabel: UILabel!
+    @IBOutlet weak var fileDateLabel: UILabel!
 }
 
 //cells for event tables

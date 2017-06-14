@@ -194,7 +194,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                             let tappedEvent = fitData.list.first(where: {$0.localID == hitCustom.localID!})
                             
                             if selected.hasEventWithID(ID: hitCustom.localID!) {
-                                selected.removeEventByLocalID(ID: hitCustom.localID!)
+                                guard selected.removeEventByLocalID(ID: hitCustom.localID!) else {return}
                                 //animated
                                 CATransaction.begin()
                                 hitCustom.lineWidth = 5.0
@@ -237,7 +237,7 @@ class FittingViewController: UIViewController, UITableViewDataSource, UITableVie
                             }
                         }
                         //remove from the selected list
-                        selected.removeEventByLocalID(ID: eventID!)
+                        guard selected.removeEventByLocalID(ID: eventID!) else {return}
                         print ("Deselected event \(eventID!)")
                     }
                 }
